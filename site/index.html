@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>program-design — your AI says it's done. Make it show receipts.</title>
+<meta name="description" content="A free, open-source reader for AI-built Next.js apps. Deterministic verification with a file:line receipt under every statement — and a live map of what your app actually does." />
+<meta property="og:title" content="program-design — make your AI show receipts" />
+<meta property="og:description" content="Every statement about your code points to a line you can open and check yourself. Free, open source, no telemetry." />
+<meta property="og:type" content="website" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --paper: #FAF7F2;
+    --paper-2: #F3EEE6;
+    --ink: #1C1917;
+    --ink-dim: #44403C;
+    --muted: #78716C;
+    --border: #E5DFD3;
+    --border-strong: #C9C1B2;
+    --accent: #0E7569;
+    --accent-soft: #E3F1EF;
+    --ok: #15803D;
+    --ok-soft: #E9F5EC;
+    --bad: #B91C1C;
+    --bad-soft: #FBEAEA;
+    --amber: #B45309;
+    --amber-soft: #FBF1E2;
+    --serif: "IBM Plex Serif", Georgia, serif;
+    --sans: "IBM Plex Sans", -apple-system, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, monospace;
+    --ease-spring: cubic-bezier(.34,1.4,.42,1);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--sans);
+    background:
+      radial-gradient(circle, rgba(28,25,23,.05) 1px, transparent 1px) 0 0 / 26px 26px,
+      var(--paper);
+    color: var(--ink);
+    line-height: 1.6;
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection { background: var(--accent); color: #fff; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+  .wrap { max-width: 1060px; margin: 0 auto; padding: 0 24px; }
+
+  /* ---- header ---- */
+  header {
+    position: sticky; top: 0; z-index: 10;
+    background: color-mix(in srgb, var(--paper) 88%, transparent);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav { display: flex; align-items: center; gap: 18px; padding: 14px 0; }
+  .wordmark { font-family: var(--mono); font-weight: 500; font-size: 15px; color: var(--ink); letter-spacing: -.01em; }
+  .wordmark:hover { text-decoration: none; color: var(--accent); }
+  .nav-links { display: flex; gap: 18px; margin-left: auto; align-items: center; font-size: 14px; }
+  .nav-links a { color: var(--ink-dim); }
+  .nav-links a:hover { color: var(--accent); }
+
+  .star-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: var(--mono); font-size: 13px; font-weight: 500;
+    color: var(--ink); background: var(--paper);
+    border: 1px solid var(--border-strong); border-radius: 8px;
+    padding: 7px 13px; transition: transform .18s var(--ease-spring), border-color .18s, background .18s;
+  }
+  .star-btn:hover { text-decoration: none; border-color: var(--ink); transform: translateY(-1px); background: #fff; }
+  .star-btn svg { width: 14px; height: 14px; }
+  .star-count { color: var(--muted); border-left: 1px solid var(--border); padding-left: 8px; }
+
+  /* ---- receipt chips: the page cites itself ---- */
+  .receipt {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--mono); font-size: 11.5px; color: var(--muted);
+    background: var(--paper-2); border: 1px solid var(--border);
+    border-radius: 6px; padding: 3px 9px;
+    transition: color .15s, border-color .15s;
+  }
+  .receipt:hover { color: var(--accent); border-color: var(--accent); text-decoration: none; }
+  .receipt::before { content: "⌖"; font-size: 12px; opacity: .7; }
+
+  .eyebrow {
+    display: flex; align-items: center; gap: 12px;
+    font-size: 12px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 18px;
+  }
+  .eyebrow .rule { flex: 0 0 34px; height: 1px; background: var(--border-strong); }
+
+  /* ---- hero ---- */
+  .hero { padding: 84px 0 72px; }
+  .hero-grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: 56px; align-items: center; }
+  h1 {
+    font-family: var(--serif); font-weight: 500; font-size: clamp(38px, 5.2vw, 58px);
+    line-height: 1.08; letter-spacing: -.015em; margin-bottom: 22px;
+  }
+  h1 em { font-style: italic; color: var(--accent); }
+  .hero-sub { font-size: 17.5px; color: var(--ink-dim); max-width: 46ch; margin-bottom: 30px; }
+  .hero-sub strong { color: var(--ink); font-weight: 600; }
+
+  .cta-row { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; margin-bottom: 18px; }
+  .btn-primary {
+    display: inline-flex; align-items: center; gap: 9px;
+    background: var(--ink); color: var(--paper);
+    font-weight: 600; font-size: 15px; border-radius: 10px; padding: 13px 22px;
+    transition: transform .18s var(--ease-spring), background .18s;
+  }
+  .btn-primary:hover { text-decoration: none; background: #000; transform: translateY(-2px); }
+  .btn-primary svg { width: 16px; height: 16px; }
+
+  .cmd {
+    display: inline-flex; align-items: center; gap: 12px;
+    font-family: var(--mono); font-size: 14px;
+    background: #fff; border: 1px solid var(--border-strong); border-radius: 10px;
+    padding: 12px 16px; color: var(--ink);
+  }
+  .cmd .dollar { color: var(--muted); user-select: none; }
+  .copy {
+    cursor: pointer; border: none; background: none; color: var(--muted);
+    font-family: var(--sans); font-size: 12px; padding: 2px 6px; border-radius: 5px;
+    transition: color .15s, background .15s;
+  }
+  .copy:hover { color: var(--accent); background: var(--accent-soft); }
+
+  .hero-foot { font-size: 13px; color: var(--muted); }
+  .hero-foot .sep { margin: 0 8px; opacity: .5; }
+
+  /* the staged exchange: claim vs verdicts */
+  .exchange {
+    background: #fff; border: 1px solid var(--border-strong); border-radius: 14px;
+    box-shadow: 0 24px 60px -32px rgba(28,25,23,.35);
+    padding: 22px; position: relative;
+    transform: rotate(.4deg);
+  }
+  .exchange-label {
+    position: absolute; top: -11px; left: 18px;
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase;
+    background: var(--ink); color: var(--paper); border-radius: 5px; padding: 3px 9px;
+  }
+  .agent-says {
+    font-family: var(--mono); font-size: 13.5px; line-height: 1.55; color: var(--ink-dim);
+    border-left: 3px solid var(--border-strong); padding: 4px 0 4px 14px; margin: 8px 0 18px;
+  }
+  .agent-says b { color: var(--ink); font-weight: 500; }
+  .verdicts { display: grid; gap: 9px; }
+  .verdict {
+    display: grid; grid-template-columns: auto 1fr; gap: 5px 12px; align-items: baseline;
+    border: 1px solid var(--border); border-radius: 9px; padding: 11px 14px;
+    opacity: 0; transform: scale(.92) rotate(-1.2deg);
+  }
+  .verdict.in { animation: stamp .5s var(--ease-spring) forwards; }
+  @keyframes stamp { to { opacity: 1; transform: scale(1) rotate(0deg); } }
+  .verdict .mark { font-family: var(--mono); font-weight: 500; font-size: 12px; letter-spacing: .08em; }
+  .verdict .what { font-size: 13.5px; color: var(--ink); }
+  .verdict .rcpt { grid-column: 2; font-family: var(--mono); font-size: 11.5px; color: var(--muted); }
+  .v-ok { background: var(--ok-soft); border-color: color-mix(in srgb, var(--ok) 28%, var(--border)); }
+  .v-ok .mark { color: var(--ok); }
+  .v-bad { background: var(--bad-soft); border-color: color-mix(in srgb, var(--bad) 30%, var(--border)); }
+  .v-bad .mark { color: var(--bad); }
+  .v-bad .what { font-weight: 600; }
+  .exchange-foot { margin-top: 16px; font-size: 12.5px; color: var(--muted); }
+
+  /* entrance choreography */
+  .rise { opacity: 0; transform: translateY(14px); animation: rise .7s var(--ease-spring) forwards; }
+  @keyframes rise { to { opacity: 1; transform: none; } }
+  .d1 { animation-delay: .05s } .d2 { animation-delay: .15s } .d3 { animation-delay: .25s }
+  .d4 { animation-delay: .35s } .d5 { animation-delay: .5s }
+
+  /* ---- honesty strip ---- */
+  .strip {
+    border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+    background: var(--paper-2); padding: 14px 0;
+  }
+  .strip-inner {
+    display: flex; gap: 28px; justify-content: center; flex-wrap: wrap;
+    font-size: 13px; color: var(--ink-dim);
+  }
+  .strip-inner span { display: inline-flex; align-items: center; gap: 8px; }
+  .strip-inner .badge {
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: .06em;
+    border: 1px solid var(--border-strong); border-radius: 999px; padding: 3px 11px; color: var(--muted);
+  }
+
+  /* ---- sections ---- */
+  section { padding: 78px 0; }
+  .sec-head { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; }
+  h2 { font-family: var(--serif); font-weight: 500; font-size: clamp(27px, 3.4vw, 36px); letter-spacing: -.01em; }
+  .sec-sub { color: var(--ink-dim); max-width: 62ch; margin-bottom: 40px; font-size: 16.5px; }
+
+  /* problem: editorial pull quote */
+  .pull {
+    font-family: var(--serif); font-style: italic; font-size: clamp(21px, 2.8vw, 28px);
+    line-height: 1.45; max-width: 30ch; color: var(--ink);
+    border-left: 3px solid var(--accent); padding-left: 26px; margin: 8px 0 26px;
+  }
+  .problem-grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 56px; align-items: start; }
+  .problem-body p { color: var(--ink-dim); margin-bottom: 14px; max-width: 56ch; }
+  .problem-body p strong { color: var(--ink); }
+
+  /* ledger: the three layers as numbered document entries */
+  .ledger { border-top: 1px solid var(--border-strong); }
+  .entry {
+    display: grid; grid-template-columns: 72px 1fr 1.1fr; gap: 28px;
+    padding: 30px 0; border-bottom: 1px solid var(--border);
+  }
+  .entry-num { font-family: var(--serif); font-style: italic; font-size: 30px; color: var(--border-strong); line-height: 1; }
+  .entry h3 { font-size: 17.5px; font-weight: 600; margin-bottom: 6px; }
+  .entry .entry-tag { font-family: var(--mono); font-size: 11.5px; color: var(--accent); letter-spacing: .04em; display: block; margin-bottom: 10px; }
+  .entry p { font-size: 14.5px; color: var(--ink-dim); max-width: 48ch; }
+  .entry-aside { font-family: var(--mono); font-size: 12.5px; color: var(--muted); line-height: 1.9; align-self: center; }
+  .entry-aside .hl { color: var(--ink); }
+
+  /* verdict specimens */
+  .specimens { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .specimen { border: 1px solid var(--border-strong); border-radius: 14px; background: #fff; padding: 24px; position: relative; overflow: hidden; }
+  .specimen .stamp {
+    font-family: var(--mono); font-weight: 500; font-size: 13px; letter-spacing: .14em;
+    display: inline-block; border: 1.5px solid; border-radius: 6px; padding: 4px 12px;
+    transform: rotate(-2deg); margin-bottom: 14px;
+  }
+  .specimen.ok .stamp { color: var(--ok); border-color: var(--ok); background: var(--ok-soft); }
+  .specimen.bad .stamp { color: var(--bad); border-color: var(--bad); background: var(--bad-soft); }
+  .specimen.und .stamp { color: var(--amber); border-color: var(--amber); background: var(--amber-soft); border-style: dashed; }
+  .specimen p { font-size: 14px; color: var(--ink-dim); }
+  .specimen .fine { font-size: 12.5px; color: var(--muted); margin-top: 12px; }
+
+  /* live map vignette */
+  .map-grid { display: grid; grid-template-columns: .95fr 1.05fr; gap: 56px; align-items: center; }
+  .map-card { background: #fff; border: 1px solid var(--border-strong); border-radius: 14px; padding: 28px 22px; box-shadow: 0 24px 60px -36px rgba(28,25,23,.3); }
+  .map-card svg { width: 100%; height: auto; display: block; }
+  .map-card .cap { font-size: 12px; color: var(--muted); text-align: center; margin-top: 10px; font-family: var(--mono); }
+  .wire { stroke: var(--accent); stroke-width: 1.7; fill: none; opacity: .55; }
+  .pulse { stroke: var(--accent); stroke-width: 2.2; fill: none; stroke-linecap: round; stroke-dasharray: 10 130; animation: flow 2.4s linear infinite; }
+  @keyframes flow { to { stroke-dashoffset: -140; } }
+  .mnode { fill: #fff; stroke: var(--border-strong); rx: 9; }
+  .mlabel { font-family: var(--mono); font-size: 10.5px; fill: var(--ink); }
+  .msub { font-family: var(--sans); font-size: 8.5px; fill: var(--muted); }
+  .feat-list { display: grid; gap: 20px; }
+  .feat { display: grid; grid-template-columns: 26px 1fr; gap: 14px; }
+  .feat svg { width: 20px; height: 20px; color: var(--accent); margin-top: 3px; }
+  .feat h3 { font-size: 16px; font-weight: 600; margin-bottom: 3px; }
+  .feat p { font-size: 14.5px; color: var(--ink-dim); }
+
+  /* skill section */
+  .skill-box {
+    border: 1px solid var(--border-strong); border-radius: 16px; background: var(--paper-2);
+    padding: 44px; display: grid; grid-template-columns: 1.1fr .9fr; gap: 44px; align-items: center;
+  }
+  .skill-box h2 { margin-bottom: 12px; }
+  .skill-box p { color: var(--ink-dim); margin-bottom: 18px; max-width: 50ch; }
+  .skill-steps { display: grid; gap: 12px; font-size: 14px; }
+  .skill-steps .cmd { width: 100%; justify-content: space-between; }
+  .skill-note { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+  /* final star CTA */
+  .finale { text-align: center; padding: 96px 0 100px; }
+  .finale h2 { font-size: clamp(30px, 4.4vw, 46px); max-width: 22ch; margin: 0 auto 16px; }
+  .finale p { color: var(--ink-dim); max-width: 52ch; margin: 0 auto 32px; }
+  .star-big {
+    display: inline-flex; align-items: center; gap: 12px;
+    font-family: var(--mono); font-weight: 500; font-size: 17px;
+    background: var(--ink); color: var(--paper); border-radius: 12px; padding: 17px 30px;
+    transition: transform .2s var(--ease-spring), box-shadow .2s;
+    box-shadow: 0 18px 44px -18px rgba(28,25,23,.5);
+  }
+  .star-big:hover { text-decoration: none; transform: translateY(-3px) rotate(-.5deg); box-shadow: 0 26px 54px -18px rgba(28,25,23,.55); }
+  .star-big svg { width: 19px; height: 19px; color: #FBBF24; }
+  .finale .fine { margin-top: 18px; font-size: 13px; color: var(--muted); }
+
+  footer { border-top: 1px solid var(--border); padding: 30px 0 44px; }
+  .foot-inner { display: flex; gap: 24px; flex-wrap: wrap; align-items: center; font-size: 13px; color: var(--muted); }
+  .foot-inner .grow { flex: 1; }
+  .foot-badge { font-family: var(--mono); font-size: 11.5px; border: 1px solid var(--border); border-radius: 999px; padding: 3px 11px; }
+
+  /* scroll reveal */
+  .reveal { opacity: 0; transform: translateY(16px); transition: opacity .6s ease, transform .6s var(--ease-spring); }
+  .reveal.seen { opacity: 1; transform: none; }
+
+  @media (max-width: 900px) {
+    .hero-grid, .problem-grid, .map-grid, .skill-box { grid-template-columns: 1fr; gap: 36px; }
+    .specimens { grid-template-columns: 1fr; }
+    .entry { grid-template-columns: 48px 1fr; }
+    .entry-aside { grid-column: 2; }
+    .hero { padding: 56px 0 52px; }
+    section { padding: 56px 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0s !important; transition-duration: .01ms !important; }
+    .verdict { opacity: 1; transform: none; }
+    .rise { opacity: 1; transform: none; }
+    .reveal { opacity: 1; transform: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a class="wordmark" href="#">program-design</a>
+    <nav class="nav-links">
+      <a href="#how">How it works</a>
+      <a href="#verdicts">Verdicts</a>
+      <a href="#skill">Claude Code skill</a>
+      <a href="https://www.npmjs.com/package/program-design" rel="noopener">npm</a>
+      <a class="star-btn" href="https://github.com/cursorboy/program-design" rel="noopener" aria-label="Star program-design on GitHub">
+        <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.819 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25z"/></svg>
+        Star
+        <span class="star-count" id="star-count" hidden></span>
+      </a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <!-- HERO -->
+  <div class="hero wrap">
+    <div class="hero-grid">
+      <div>
+        <p class="eyebrow rise d1"><span class="rule"></span>free · open source · no telemetry</p>
+        <h1 class="rise d2">Your AI says it's done.<br/>Make it <em>show receipts.</em></h1>
+        <p class="hero-sub rise d3">program-design reads the actual code your agent wrote and checks every claim against it — deterministically, no second AI. <strong>Every statement points to a line you can open and check yourself.</strong></p>
+        <div class="cta-row rise d4">
+          <a class="btn-primary" href="https://github.com/cursorboy/program-design" rel="noopener">
+            <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.819 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25z"/></svg>
+            Star on GitHub
+          </a>
+          <span class="cmd"><span class="dollar">$</span><span id="cmd-1">npx program-design live</span><button class="copy" data-copy="npx program-design live" aria-label="Copy command">copy</button></span>
+        </div>
+        <p class="hero-foot rise d5">Works on any Next.js repo <span class="sep">·</span> no repo handy? <code style="font-family:var(--mono);font-size:13px">npx program-design demo</code></p>
+      </div>
+
+      <div class="rise d5">
+        <div class="exchange" aria-label="Example: an agent claim checked against the code">
+          <span class="exchange-label">claim time</span>
+          <p class="agent-says">agent: <b>"Done! I added login with rate limiting and saved the email to the database."</b></p>
+          <div class="verdicts" id="verdicts">
+            <div class="verdict v-ok">
+              <span class="mark">✓ CONFIRMED</span>
+              <span class="what">route <code style="font-family:var(--mono)">POST /api/login</code> exists</span>
+              <span class="rcpt">app/api/login/route.ts:1</span>
+            </div>
+            <div class="verdict v-ok">
+              <span class="mark">✓ CONFIRMED</span>
+              <span class="what">email column on the User model</span>
+              <span class="rcpt">prisma/schema.prisma:14</span>
+            </div>
+            <div class="verdict v-bad">
+              <span class="mark">✕ ABSENT</span>
+              <span class="what">rate limiting on /api/login — not in the code</span>
+              <span class="rcpt">searched: middleware.ts · recognized guards · config.matcher</span>
+            </div>
+          </div>
+          <p class="exchange-foot">The verdict is computed from the code, not by another model. The red one is why this exists.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HONESTY STRIP -->
+  <div class="strip">
+    <div class="wrap strip-inner">
+      <span><span class="badge">verifies presence, not correctness</span></span>
+      <span>Never reports "absent" when it means "I didn't find it"</span>
+      <span>Binds to 127.0.0.1 only — your code never leaves your machine</span>
+    </div>
+  </div>
+
+  <!-- PROBLEM -->
+  <section>
+    <div class="wrap problem-grid">
+      <div class="problem-body reveal">
+        <p class="eyebrow"><span class="rule"></span>the problem</p>
+        <h2 style="margin-bottom:18px">You can't review code you can't read.</h2>
+        <p>People build real products with AI agents now. The agent says <strong>"done — I added login with rate limiting"</strong> and… sometimes it's true. Sometimes the rate limiting is missing, the email is logged but never stored, or the route it described doesn't exist.</p>
+        <p>Catching that means reading the code — <strong>which is the one thing you can't do.</strong> A second AI reviewer doesn't fix it either: a second model hallucinates just like the first.</p>
+        <p>program-design is a different kind of answer: a <strong>deterministic reader</strong>. It parses the raw source into a facts graph and checks claims against it mechanically. The LLM only translates in and narrates out — fenced by receipts. It never renders the verdict.</p>
+      </div>
+      <blockquote class="pull reveal">"You don't have to trust the tool. You can open the line of code it points at."</blockquote>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section id="how" style="padding-top:0">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <h2>One engine, three layers.</h2>
+        <a class="receipt" href="https://github.com/cursorboy/program-design/blob/main/README.md" rel="noopener">README.md:37</a>
+      </div>
+      <p class="sec-sub reveal">The page you're reading practices the same rule as the tool: claims carry receipts. Every chip links to the real file.</p>
+      <div class="ledger reveal">
+        <div class="entry">
+          <span class="entry-num">01</span>
+          <div>
+            <h3>Deterministic extractor</h3>
+            <a class="receipt entry-tag" href="https://github.com/cursorboy/program-design/tree/main/src/core/extract" rel="noopener">src/core/extract/</a>
+            <p>Parses raw source with the TypeScript compiler — no LLM — into a facts graph: routes, middleware attachment, Prisma schema, env reads, dependencies, frontend→backend wiring. Honest by construction.</p>
+          </div>
+          <div class="entry-aside">routes · middleware · schema<br/>env names <span class="hl">(never values)</span><br/>deps · wiring · forms · nav</div>
+        </div>
+        <div class="entry">
+          <span class="entry-num">02</span>
+          <div>
+            <h3>Three-state claim checker</h3>
+            <a class="receipt entry-tag" href="https://github.com/cursorboy/program-design/blob/main/src/core/check/checker.ts" rel="noopener">src/core/check/checker.ts</a>
+            <p>A claim becomes a query over the graph. The verdict — CONFIRMED, ABSENT, or UNDETERMINED — is computed deterministically against a versioned pattern allowlist. The model never decides.</p>
+          </div>
+          <div class="entry-aside"><span class="hl">0 false-ABSENT</span> verdicts is the<br/>release gate, enforced in CI<br/>on an adversarial corpus</div>
+        </div>
+        <div class="entry">
+          <span class="entry-num">03</span>
+          <div>
+            <h3>Narrator, fenced by receipts</h3>
+            <a class="receipt entry-tag" href="https://github.com/cursorboy/program-design/blob/main/src/core/narrate/lint.ts" rel="noopener">src/core/narrate/lint.ts</a>
+            <p>Plain language for humans — but every statement is bound to a fact id that resolves to file:line. A statement with no fact behind it is dropped, whole. Fail closed.</p>
+          </div>
+          <div class="entry-aside">statement → fact id → <span class="hl">file:line</span><br/>no fact, no sentence</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VERDICTS -->
+  <section id="verdicts" style="padding-top:0">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <h2>Three verdicts. No fourth option.</h2>
+        <a class="receipt" href="https://github.com/cursorboy/program-design/blob/main/docs/what-it-verifies.md" rel="noopener">docs/what-it-verifies.md</a>
+      </div>
+      <p class="sec-sub reveal">Most tools fail by overclaiming. This one is built around the refusal to.</p>
+      <div class="specimens">
+        <div class="specimen ok reveal">
+          <span class="stamp">✓ CONFIRMED</span>
+          <p>The claimed thing is in the code, with a <strong>file:line receipt</strong> you can open — in your editor or right in the report.</p>
+          <p class="fine">"Found it. Here's the line."</p>
+        </div>
+        <div class="specimen bad reveal">
+          <span class="stamp">✕ ABSENT</span>
+          <p>Provable absence. Every ABSENT records its <strong>search scope</strong> — which conventions, directories, and matchers were checked.</p>
+          <p class="fine">"Looked everywhere it could legally be. Not there."</p>
+        </div>
+        <div class="specimen und reveal">
+          <span class="stamp">? UNDETERMINED</span>
+          <p>Dynamic dispatch, a URL built at runtime, an unsupported pattern — the tool says <strong>"I can't safely confirm this"</strong> and shows the exact code that defeated it.</p>
+          <p class="fine">Never dressed up as a yes or a no.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LIVE MAP -->
+  <section style="padding-top:0">
+    <div class="wrap map-grid">
+      <div class="map-card reveal" aria-label="A miniature of the live system map">
+        <svg viewBox="0 0 420 190" role="img" aria-label="Login form connects to the app server through a security check; the server saves to User records">
+          <path class="wire" d="M118 60 C 160 60, 170 95, 210 95"/>
+          <path class="pulse" d="M118 60 C 160 60, 170 95, 210 95"/>
+          <path class="wire" d="M286 95 C 320 95, 330 95, 352 95"/>
+          <path class="pulse" style="animation-delay:.9s" d="M286 95 C 320 95, 330 95, 352 95"/>
+          <rect class="mnode" x="20" y="38" width="98" height="44" rx="9"/>
+          <text class="mlabel" x="34" y="57">Login form</text>
+          <text class="msub" x="34" y="71">a screen people see</text>
+          <rect class="mnode" x="210" y="73" width="76" height="44" rx="9"/>
+          <text class="mlabel" x="224" y="92">server</text>
+          <text class="msub" x="224" y="106">does the work</text>
+          <rect class="mnode" x="352" y="73" width="56" height="44" rx="9"/>
+          <text class="mlabel" x="361" y="92">User</text>
+          <text class="msub" x="361" y="106">records</text>
+          <g transform="translate(158,66)">
+            <circle r="11" fill="#fff" stroke="var(--border-strong)"/>
+            <path d="M-3.5 0.5 v-2 a3.5 3.5 0 0 1 7 0 v2 M-4.5 0.5 h9 v6 h-9 z" fill="none" stroke="var(--ink-dim)" stroke-width="1.3" stroke-linejoin="round"/>
+          </g>
+          <text class="msub" x="138" y="140">a lock = a security check, found in the real code</text>
+        </svg>
+        <p class="cap">the live map — drawn only from extracted facts</p>
+      </div>
+      <div>
+        <p class="eyebrow reveal"><span class="rule"></span>while it builds</p>
+        <h2 class="reveal" style="margin-bottom:14px">Watch your app take shape — in words you already know.</h2>
+        <div class="feat-list" style="margin-top:26px">
+          <div class="feat reveal">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="7.5"/><path d="M10 6v4l2.5 1.8"/></svg>
+            <div><h3>A map that explains itself</h3><p>First visit, the map assembles one plain-language beat at a time: screens → the server → your records → outside services. No diagram-reading skills required.</p></div>
+          </div>
+          <div class="feat reveal">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 10h4l2-5 3 10 2-5h3"/></svg>
+            <div><h3>Live while the agent works</h3><p>The diagram refreshes as files change. Previously verified claims are re-checked on every change — if a feature quietly disappears, you get a regression alert.</p></div>
+          </div>
+          <div class="feat reveal">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3l7 4v6l-7 4-7-4V7z"/><path d="M10 9v8M3.5 7.5L10 11l6.5-3.5"/></svg>
+            <div><h3>"What looks off", with receipts</h3><p>Secret-named settings exposed to the browser, doors that save data with no security check found, calls it can't trace — presence statements only, each pointing at the exact line.</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SKILL -->
+  <section id="skill" style="padding-top:0">
+    <div class="wrap">
+      <div class="skill-box reveal">
+        <div>
+          <p class="eyebrow"><span class="rule"></span>the Claude Code skill</p>
+          <h2>Verification at claim time, inside your session.</h2>
+          <p>When your agent says "done", the skill translates that claim into a structured manifest, runs the deterministic verifier in clean context, and presents the verdict table <strong>verbatim — it is not allowed to soften an ABSENT.</strong></p>
+          <p class="skill-note">Zero config, no API keys: the narrator runs inside the Claude Code session you already have. State lives in <code style="font-family:var(--mono);font-size:12px">~/.program-design/</code> — your repo is never polluted.</p>
+        </div>
+        <div class="skill-steps">
+          <span class="cmd"><span><span class="dollar">$</span> npx program-design live</span><button class="copy" data-copy="npx program-design live">copy</button></span>
+          <span class="cmd"><span><span class="dollar">$</span> npx program-design check --manifest claims.json</span><button class="copy" data-copy="npx program-design check --manifest claims.json">copy</button></span>
+          <span class="cmd"><span><span class="dollar">$</span> npx program-design doctor</span><button class="copy" data-copy="npx program-design doctor">copy</button></span>
+          <p class="skill-note">Exit code 1 on any divergence — drop it straight into CI. <a href="https://github.com/cursorboy/program-design/blob/main/docs/ci.md" rel="noopener">docs/ci.md</a></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FINALE -->
+  <section class="finale" style="padding-top:8px">
+    <div class="wrap">
+      <p class="eyebrow reveal" style="justify-content:center"><span class="rule"></span>one ask<span class="rule"></span></p>
+      <h2 class="reveal">If you think AI-built code should come with receipts, star the repo.</h2>
+      <p class="reveal">program-design is MIT-licensed, has no telemetry, and doesn't phone home — so stars are genuinely the only signal we get that this should keep existing. One click funds nothing and means everything.</p>
+      <a class="star-big reveal" href="https://github.com/cursorboy/program-design" rel="noopener">
+        <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.819 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25z"/></svg>
+        Star cursorboy/program-design
+        <span id="star-count-big"></span>
+      </a>
+      <p class="fine reveal">then: <code style="font-family:var(--mono)">npx program-design demo</code> — two minutes, no repo needed.</p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot-inner">
+    <span class="wordmark" style="font-size:13px">program-design</span>
+    <span class="foot-badge">verifies presence, not correctness</span>
+    <span class="grow"></span>
+    <a href="https://github.com/cursorboy/program-design" rel="noopener">GitHub</a>
+    <a href="https://www.npmjs.com/package/program-design" rel="noopener">npm</a>
+    <a href="https://github.com/cursorboy/program-design/blob/main/docs/what-it-verifies.md" rel="noopener">What it can &amp; can't verify</a>
+    <span>MIT © 2026 piam</span>
+  </div>
+</footer>
+
+<script>
+  // Stagger the hero verdict stamps after load — the page's one big moment.
+  var rows = document.querySelectorAll('#verdicts .verdict');
+  rows.forEach(function (r, i) {
+    setTimeout(function () { r.classList.add('in'); }, 900 + i * 650);
+  });
+
+  // Copy buttons.
+  document.querySelectorAll('.copy').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var text = btn.getAttribute('data-copy');
+      function done() { btn.textContent = 'copied'; setTimeout(function () { btn.textContent = 'copy'; }, 1400); }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, done);
+      } else { done(); }
+    });
+  });
+
+  // Live star count (graceful: hidden unless the API answers).
+  fetch('https://api.github.com/repos/cursorboy/program-design')
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (j) {
+      if (!j || typeof j.stargazers_count !== 'number') return;
+      var n = j.stargazers_count;
+      var fmt = n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k' : String(n);
+      var el = document.getElementById('star-count');
+      if (el) { el.textContent = fmt; el.hidden = false; }
+      var big = document.getElementById('star-count-big');
+      if (big && n > 0) { big.textContent = '· ' + fmt; }
+    })
+    .catch(function () {});
+
+  // Scroll reveals.
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting) { e.target.classList.add('seen'); io.unobserve(e.target); }
+    });
+  }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
+  document.querySelectorAll('.reveal').forEach(function (el) { io.observe(el); });
+</script>
+</body>
+</html>
