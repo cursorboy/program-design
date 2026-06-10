@@ -233,6 +233,9 @@
     .nav-links a:not(.star-btn) { display: none; }
     .hero { padding: 44px 0 16px; }
     .graph-caption p { font-size: 15px; }
+    /* keep the graph readable: scroll it sideways instead of shrinking it */
+    .graph-card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .graph-card svg { min-width: 780px; }
   }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0s !important; transition-duration: .01ms !important; }
@@ -327,7 +330,7 @@
         <g id="g2" class="beat">
           <rect class="gnode-box" x="404" y="158" width="192" height="74" rx="10" stroke-width="1.4"/>
           <text class="gnode-name" x="422" y="184">your app's server</text>
-          <text class="gnode-sub" x="422" y="199">Next.js — receives requests, decides what happens</text>
+          <text class="gnode-sub" x="422" y="199">Next.js — decides what happens</text>
           <text class="gnode-rcpt" x="422" y="215">app/api/login/route.ts:1</text>
         </g>
 
