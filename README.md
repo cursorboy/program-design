@@ -3,6 +3,8 @@
 **Every statement about your code points to a line you can open and check
 yourself.**
 
+**Website:** [cursorboy.github.io/program-design](https://cursorboy.github.io/program-design/)
+
 `badge: verifies presence, not correctness`
 
 program-design is a free, open-source reader for AI-built Next.js apps. When the

@@ -290,6 +290,12 @@
     .entry-aside { grid-column: 2; }
     .hero { padding: 56px 0 52px; }
     section { padding: 56px 0; }
+    .skill-box { padding: 28px 22px; }
+  }
+  @media (max-width: 740px) {
+    /* small screens: wordmark + star only — text links would wrap the header */
+    .nav-links a:not(.star-btn) { display: none; }
+    .nav { padding: 12px 0; }
   }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0s !important; transition-duration: .01ms !important; }
@@ -573,6 +579,7 @@
     .then(function (j) {
       if (!j || typeof j.stargazers_count !== 'number') return;
       var n = j.stargazers_count;
+      if (n < 1) return; // a zero is honest but persuades no one
       var fmt = n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k' : String(n);
       var el = document.getElementById('star-count');
       if (el) { el.textContent = fmt; el.hidden = false; }
