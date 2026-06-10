@@ -56,7 +56,13 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Publish
-        run: npm publish --access public
+      - name: Publish (skips if this version is already on the registry)
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if npm view "program-design@$VERSION" version >/dev/null 2>&1; then
+            echo "program-design@$VERSION is already published — nothing to do."
+          else
+            npm publish --access public
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
