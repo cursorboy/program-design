@@ -1,0 +1,280 @@
+[
+  {
+    "claim": {
+      "id": "c01",
+      "category": "route",
+      "predicate": "exists",
+      "subject": "/api/login",
+      "qualifiers": {
+        "method": "POST"
+      },
+      "rawText": "I added a POST /api/login endpoint."
+    },
+    "expected": "confirmed",
+    "note": "route:POST /api/login node present (routes/route-handler)."
+  },
+  {
+    "claim": {
+      "id": "c02",
+      "category": "route",
+      "predicate": "exists",
+      "subject": "/api/login",
+      "qualifiers": {
+        "method": "GET"
+      },
+      "rawText": "There is a GET handler for /api/login."
+    },
+    "expected": "absent",
+    "note": "Only POST is exported from app/api/login/route.ts; app dir present, no parse failures under app/, no unresolved route facts → ABSENT."
+  },
+  {
+    "claim": {
+      "id": "c03",
+      "category": "route",
+      "predicate": "exists",
+      "subject": "/api/payments",
+      "qualifiers": {
+        "method": "POST"
+      },
+      "rawText": "The payments route is implemented at /api/payments."
+    },
+    "expected": "absent",
+    "note": "No such route node anywhere; provable absence with app-dir search scope."
+  },
+  {
+    "claim": {
+      "id": "c04",
+      "category": "route",
+      "predicate": "exists",
+      "subject": "/blog/[slug]",
+      "qualifiers": {
+        "method": "GET"
+      },
+      "rawText": "Dynamic blog post pages exist at /blog/[slug]."
+    },
+    "expected": "confirmed",
+    "note": "Dynamic segment route node present; bracket syntax preserved."
+  },
+  {
+    "claim": {
+      "id": "c05",
+      "category": "route",
+      "predicate": "exists",
+      "subject": "/about",
+      "qualifiers": {
+        "method": "GET"
+      },
+      "rawText": "There is an about page at /about."
+    },
+    "expected": "confirmed",
+    "note": "Route-group (marketing) segment dropped → /about node present."
+  },
+  {
+    "claim": {
+      "id": "c06",
+      "category": "middleware",
+      "predicate": "attached",
+      "subject": "/api/login",
+      "qualifiers": {
+        "method": "POST",
+        "middleware": "middleware.ts"
+      },
+      "rawText": "Auth middleware protects /api/login."
+    },
+    "expected": "confirmed",
+    "note": "attachedTo edge to route:POST /api/login with tier guard-wrapper (matcher '/api/:path*' + withAuth guard)."
+  },
+  {
+    "claim": {
+      "id": "c07",
+      "category": "middleware",
+      "predicate": "attached",
+      "subject": "/",
+      "qualifiers": {
+        "method": "GET",
+        "middleware": "middleware.ts"
+      },
+      "rawText": "The middleware runs on the home page /."
+    },
+    "expected": "undetermined",
+    "note": "Middleware node exists but matcher '/api/:path*' excludes /; no qualifying edge to / and no global-exists edge → UNDETERMINED (not ABSENT, because a middleware node exists)."
+  },
+  {
+    "claim": {
+      "id": "c08",
+      "category": "schema",
+      "predicate": "exists",
+      "subject": "User",
+      "qualifiers": {},
+      "rawText": "There is a User table."
+    },
+    "expected": "confirmed",
+    "note": "dbTable:User node present from prisma/schema.prisma."
+  },
+  {
+    "claim": {
+      "id": "c09",
+      "category": "schema",
+      "predicate": "has-column",
+      "subject": "User",
+      "qualifiers": {
+        "column": "email"
+      },
+      "rawText": "The User table has an email column."
+    },
+    "expected": "confirmed",
+    "note": "dbColumn:User.email node + hasColumn edge present."
+  },
+  {
+    "claim": {
+      "id": "c10",
+      "category": "schema",
+      "predicate": "has-column",
+      "subject": "User",
+      "qualifiers": {
+        "column": "phone"
+      },
+      "rawText": "The User table stores a phone number."
+    },
+    "expected": "absent",
+    "note": "No User.phone column in the schema; schema parsed cleanly → provable absence."
+  },
+  {
+    "claim": {
+      "id": "c11",
+      "category": "env",
+      "predicate": "reads",
+      "subject": "DATABASE_URL",
+      "qualifiers": {},
+      "rawText": "The app reads DATABASE_URL from the environment."
+    },
+    "expected": "confirmed",
+    "note": "envVar:DATABASE_URL node + reads edge from app/api/login/route.ts."
+  },
+  {
+    "claim": {
+      "id": "c12",
+      "category": "env",
+      "predicate": "reads",
+      "subject": "STRIPE_KEY",
+      "qualifiers": {},
+      "rawText": "Stripe is configured via STRIPE_KEY."
+    },
+    "expected": "absent",
+    "note": "STRIPE_KEY never read in source; no envVar node."
+  },
+  {
+    "claim": {
+      "id": "c13",
+      "category": "dep",
+      "predicate": "installed",
+      "subject": "next",
+      "qualifiers": {},
+      "rawText": "Next.js is installed."
+    },
+    "expected": "confirmed",
+    "note": "dependency:next node present from package.json."
+  },
+  {
+    "claim": {
+      "id": "c14",
+      "category": "dep",
+      "predicate": "installed",
+      "subject": "express",
+      "qualifiers": {},
+      "rawText": "The backend uses Express."
+    },
+    "expected": "absent",
+    "note": "express not in dependencies or devDependencies."
+  },
+  {
+    "claim": {
+      "id": "c15",
+      "category": "wiring",
+      "predicate": "wired",
+      "subject": "/api/login",
+      "qualifiers": {
+        "method": "POST"
+      },
+      "rawText": "The login form calls the /api/login endpoint."
+    },
+    "expected": "confirmed",
+    "note": "literal fetch('/api/login', { method: 'POST' }) in LoginForm.tsx → wiredTo edge (tier literal)."
+  },
+  {
+    "claim": {
+      "id": "c16",
+      "category": "wiring",
+      "predicate": "wired",
+      "subject": "/api",
+      "qualifiers": {
+        "method": "GET"
+      },
+      "rawText": "The Dynamic component fetches /api/<endpoint> at runtime."
+    },
+    "expected": "undetermined",
+    "note": "fetch(`/api/${endpoint}`) is a template literal → dynamic tier; an unresolved wiredTo edge to the static-prefix route (GET /api) with tier 'dynamic' makes the checker return UNDETERMINED ('could not resolve the URL'), never matched or absent. Subject is the static prefix the dynamic call could reach."
+  },
+  {
+    "claim": {
+      "id": "c17",
+      "category": "schema",
+      "predicate": "exists",
+      "subject": "Comment",
+      "qualifiers": {},
+      "rawText": "Comments are stored in a Comment table."
+    },
+    "expected": "absent",
+    "note": "Adversarial: plausible-sounding table that does not exist; schema parsed cleanly → provable absence, NOT a false confirm."
+  },
+  {
+    "claim": {
+      "id": "c18",
+      "category": "route",
+      "predicate": "exists",
+      "subject": "/api/signup",
+      "qualifiers": {
+        "method": "POST"
+      },
+      "rawText": "Signup is handled at POST /api/signup."
+    },
+    "expected": "confirmed",
+    "note": "Adversarial sibling of /api/login to catch path-prefix confusion; node present."
+  },
+  {
+    "claim": {
+      "id": "c19",
+      "category": "wiring",
+      "predicate": "wired",
+      "subject": "/api/login",
+      "qualifiers": {},
+      "rawText": "the login form calls the API"
+    },
+    "expected": "confirmed",
+    "note": "REGRESSION (2026-06-07 smoke): method-less wiring claim was false-ABSENT; must match any-method route"
+  },
+  {
+    "claim": {
+      "id": "c20",
+      "category": "middleware",
+      "predicate": "attached",
+      "subject": "/api/login",
+      "qualifiers": {},
+      "rawText": "middleware protects the login route"
+    },
+    "expected": "confirmed",
+    "note": "REGRESSION (2026-06-07 smoke): method-less middleware claim was false-UNDETERMINED"
+  },
+  {
+    "claim": {
+      "id": "c21",
+      "category": "route",
+      "predicate": "exists",
+      "subject": "/api/login",
+      "qualifiers": {},
+      "rawText": "there is a login endpoint"
+    },
+    "expected": "confirmed",
+    "note": "method-less route existence matches any method"
+  }
+]

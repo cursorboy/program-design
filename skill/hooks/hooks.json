@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "test -f /tmp/program-design-claims.json && npx program-design check --manifest /tmp/program-design-claims.json --json || true"
+          }
+        ]
+      }
+    ]
+  }
+}

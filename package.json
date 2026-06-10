@@ -1,0 +1,40 @@
+{
+  "name": "program-design",
+  "version": "0.1.0",
+  "description": "Live structure visualization + deterministic claim verification for AI-built Next.js apps. Every statement carries a file:line receipt.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "program-design": "./dist/cli/index.js"
+  },
+  "main": "./dist/core/index.js",
+  "types": "./dist/core/index.d.ts",
+  "files": [
+    "dist",
+    "fixtures/sample-app",
+    "docs",
+    "skill"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepack": "npm run build",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "dev": "tsx src/cli/index.ts"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "chokidar": "^4.0.3",
+    "commander": "^14.0.0",
+    "ts-morph": "^26.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.8.0",
+    "vitest": "^3.2.0"
+  }
+}

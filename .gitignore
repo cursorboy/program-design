@@ -1,0 +1,7 @@
+node_modules/
+dist/
+*.tsbuildinfo
+.DS_Store
+fixtures/sample-app/node_modules/
+fixtures/sample-app/.next/
+.gstack/

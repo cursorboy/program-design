@@ -1,0 +1,21 @@
+{
+  "name": "sample-app",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "next": "15.0.0",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "@prisma/client": "6.0.0"
+  },
+  "devDependencies": {
+    "prisma": "6.0.0",
+    "typescript": "5.8.0"
+  }
+}
