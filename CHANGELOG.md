@@ -4,6 +4,18 @@ All notable changes to program-design are documented here. This project follows
 [Semantic Versioning](https://semver.org/). The claim-manifest schema is stable
 within a major version (see [docs/claim-manifest.md](docs/claim-manifest.md)).
 
+## [0.1.1] — 2026-06-10
+
+### Fixed
+
+- **CLI did nothing when run via npx.** npm installs the bin as a
+  `node_modules/.bin` symlink; Node realpaths `import.meta.url`, so the naive
+  entry-point check (`argv[1] === fileURLToPath(import.meta.url)`) never
+  matched and `main()` silently never ran. Both sides are realpathed now
+  (`src/cli/entry.ts`), with symlink-shim regression tests.
+- CI release job is idempotent: a re-run on an already-published version skips
+  instead of failing.
+
 ## [0.1.0] — 2026-06-10
 
 Initial release. Next.js App Router + Prisma, MVP.

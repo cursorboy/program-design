@@ -1,6 +1,6 @@
 {
   "name": "program-design",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Live structure visualization + deterministic claim verification for AI-built Next.js apps. Every statement carries a file:line receipt.",
   "license": "MIT",
   "type": "module",

@@ -53,6 +53,7 @@ import {
 } from '../server/index.js';
 import { deriveSystemMap, deriveTour } from '../server/system-map-derive.js';
 import { prepareAuthoredMap } from './organize.js';
+import { isMainEntry } from './entry.js';
 
 import {
   PDError,
@@ -73,7 +74,7 @@ import {
 import { nodeMajor, pidAlive, looksLikeNextRepo } from './doctor-utils.js';
 
 const STALE_GRAPH_MS = 60_000;
-const CLI_VERSION = '0.1.0';
+const CLI_VERSION = '0.1.1';
 /** Session id used for live-mode regression rechecks (one daemon per repo). */
 const LIVE_SESSION_ID = 'live';
 
@@ -748,7 +749,7 @@ function buildProgram(): Command {
       'Live structure visualization + deterministic claim verification for AI-built Next.js apps.',
     )
     .option('--repo <path>', 'repo root to operate on (default: cwd)')
-    .version('0.1.0');
+    .version('0.1.1');
 
   const repoOf = (cmd: Command): string =>
     resolveRepo(cmd.optsWithGlobals() as GlobalOpts);
@@ -891,17 +892,10 @@ async function main(): Promise<void> {
   }
 }
 
-// Only run when invoked as the entry point (keeps the module importable in tests).
-const isEntry = (() => {
-  if (!process.argv[1]) return false;
-  try {
-    return fileURLToPath(import.meta.url) === resolve(process.argv[1]);
-  } catch {
-    return false;
-  }
-})();
-
-if (isEntry) {
+// Only run when invoked as the entry point (keeps the module importable in
+// tests). Symlink-safe: npx invokes the node_modules/.bin SYMLINK, so both
+// sides must be realpathed before comparing (see entry.ts).
+if (isMainEntry(process.argv[1], import.meta.url)) {
   void main();
 }
 
