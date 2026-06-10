@@ -3,6 +3,28 @@
 Deferred work from /autoplan review, 2026-06-07. Each item carries enough context to
 pick up cold in 3 months.
 
+## P1 — MCP server over the facts graph (2026-06-10, from Graphify comparison)
+- **What:** Expose the deterministic facts graph as MCP tools (stdio + HTTP):
+  `find_route`, `middleware_for_route`, `wiring_for_page`, `schema_model`,
+  `receipt_for_fact`, `check_claim`. Every answer carries file:line provenance.
+- **Why:** Graphify (graphify.net) proved agents want a graph instead of grep —
+  its pitch is context-cost reduction. Ours is stronger on trust: their semantic
+  edges are LLM-inferred (tagged EXTRACTED/INFERRED/AMBIGUOUS); our graph is
+  deterministic-only. "The structure source your agent cannot hallucinate" is a
+  moat Graphify can't copy without giving up its breadth.
+- **Bonus:** `check_claim` as an MCP tool makes ANY agent self-verifying, not
+  just Claude Code — grows the claim-manifest standard (see schema-as-platform).
+- **Effort:** M. **Depends on:** stable graph schema (already versioned).
+
+## P2 — Standalone shareable map export (`export html`)
+- **What:** Single-file interactive HTML snapshot of the system map (the
+  graph.html pattern Graphify ships) — founders share "what got built" with a
+  cofounder/contractor without running anything.
+- **Why:** The shareable artifact is the viral loop; also the static-export
+  precursor the cloud-links TODO (P3 below) already calls for.
+- **Effort:** S-M (the SPA is already self-contained; bake state in, strip the
+  daemon dependency).
+
 ## P2 — Spec-vs-code verification mode
 - **What:** Verify the codebase against the user's original task/spec, not the agent's
   self-reported claims.
