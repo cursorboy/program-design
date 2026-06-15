@@ -19,7 +19,29 @@ like the first). The verdict — CONFIRMED, ABSENT, or UNDETERMINED — is compu
 deterministically from the code. The LLM only translates the claim in and
 narrates the facts out, fenced by receipts.
 
-## Quickstart
+## Install once — then it just works (Claude Code)
+
+This is the path for non-technical builders. In Claude Code, run **two lines once**:
+
+```
+/plugin marketplace add cursorboy/program-design
+/plugin install program-design@program-design
+```
+
+That's it. There is nothing else to download and no commands to remember. From
+then on, in any Next.js project, the agent **knows when to use it**: it offers
+the live structure map early, and it verifies its own "I added X" claims against
+the real code before telling you it's done — each verdict with a `file:line`
+receipt. The CLI is fetched automatically by `npx` on first use; the narrator
+runs inside your existing Claude Code session, so there are **no API keys and no
+config**.
+
+> Prefer the menu? Type `/plugin`, pick "Add marketplace", paste
+> `cursorboy/program-design`, then install — no typing of commands at all.
+
+## Quickstart (CLI, no plugin)
+
+You can also drive it directly without the plugin:
 
 ```bash
 cd my-next-app
@@ -31,10 +53,6 @@ No repo handy? Run it on the bundled sample app:
 ```bash
 npx program-design demo        # same flow on a sample Next.js + Prisma repo
 ```
-
-The Claude Code skill installs via `/plugin` (marketplace) or npx. The first
-claim-time verification runs with **zero config and no API keys** — the narrator
-runs inside your existing Claude Code session.
 
 ## How it works (three layers, one engine)
 

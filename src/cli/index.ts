@@ -74,7 +74,7 @@ import {
 import { nodeMajor, pidAlive, looksLikeNextRepo } from './doctor-utils.js';
 
 const STALE_GRAPH_MS = 60_000;
-const CLI_VERSION = '0.1.1';
+const CLI_VERSION = '0.2.0';
 /** Session id used for live-mode regression rechecks (one daemon per repo). */
 const LIVE_SESSION_ID = 'live';
 
@@ -749,7 +749,7 @@ function buildProgram(): Command {
       'Live structure visualization + deterministic claim verification for AI-built Next.js apps.',
     )
     .option('--repo <path>', 'repo root to operate on (default: cwd)')
-    .version('0.1.1');
+    .version('0.2.0');
 
   const repoOf = (cmd: Command): string =>
     resolveRepo(cmd.optsWithGlobals() as GlobalOpts);

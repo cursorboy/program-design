@@ -200,8 +200,9 @@ deterministic map.
 
 Live refresh is automatic via the file watcher started by `program-design live`,
 so a PostToolUse hook is optional. A `Stop` hook can drive the claim-time flow
-when you finish a turn. See `skill/HOOKS.md` for examples and a `hooks.json`
-snippet.
+when you finish a turn. See `HOOKS.md` (next to this file) for examples and a
+`hooks.json` snippet. When installed as a Claude Code plugin, the SessionStart
+and Stop hooks are wired up automatically — nothing for the user to configure.
 
 ## Honest-claim disclaimer (always include)
 

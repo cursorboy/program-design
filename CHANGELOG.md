@@ -16,10 +16,18 @@ within a major version (see [docs/claim-manifest.md](docs/claim-manifest.md)).
 - CI release job is idempotent: a re-run on an already-published version skips
   instead of failing.
 
-## [Unreleased]
+## [0.2.0] — 2026-06-15
 
 ### Added
 
+- **One-command Claude Code install.** program-design now ships as a Claude Code
+  **plugin**: `/plugin marketplace add cursorboy/program-design` then
+  `/plugin install program-design@program-design`. After that the skill
+  auto-activates and the bundled hooks run hands-free — no downloads, no
+  commands to remember. A `SessionStart` hook detects a Next.js project and
+  tells the agent to offer the live map and verify its own claims; a `Stop`
+  hook runs the deterministic verifier when a claim manifest is staged. The CLI
+  is fetched by `npx` on first use, so the user installs nothing else.
 - **Audience onboarding.** First visit asks "How should we explain your app?"
   with three plain choices — *Keep it simple* / *Show me & explain* / *I write
   code* — before anything is drawn. The choice is remembered (`pd-audience`)

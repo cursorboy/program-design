@@ -1,0 +1,26 @@
+{
+  "description": "program-design — nudge the agent to map + verify, hands-free.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/pd-session-start.sh\""
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "test -f /tmp/program-design-claims.json && npx program-design check --manifest /tmp/program-design-claims.json --json || true"
+          }
+        ]
+      }
+    ]
+  }
+}

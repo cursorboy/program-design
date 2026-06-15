@@ -1,0 +1,10 @@
+{
+  "name": "program-design",
+  "version": "0.2.0",
+  "description": "Watch your AI-built Next.js app take shape as a plain-language map, and verify every \"I added X\" claim against the real code with a file:line receipt under it. Verifies presence, not correctness.",
+  "author": { "name": "piam", "url": "https://github.com/cursorboy" },
+  "homepage": "https://cursorboy.github.io/program-design/",
+  "repository": "https://github.com/cursorboy/program-design",
+  "license": "MIT",
+  "keywords": ["nextjs", "verification", "visualization", "facts-graph", "claim-checking", "non-technical"]
+}

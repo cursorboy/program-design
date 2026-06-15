@@ -1,0 +1,15 @@
+{
+  "name": "program-design",
+  "owner": { "name": "piam", "url": "https://github.com/cursorboy" },
+  "metadata": {
+    "description": "program-design — see what your AI actually built, and verify its claims."
+  },
+  "plugins": [
+    {
+      "name": "program-design",
+      "source": "./",
+      "version": "0.2.0",
+      "description": "A plain-language map of your AI-built Next.js app + deterministic claim verification with file:line receipts. The skill activates automatically — no commands to remember."
+    }
+  ]
+}

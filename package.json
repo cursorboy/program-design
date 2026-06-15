@@ -1,9 +1,11 @@
 {
   "name": "program-design",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Live structure visualization + deterministic claim verification for AI-built Next.js apps. Every statement carries a file:line receipt.",
   "license": "MIT",
   "type": "module",
+  "homepage": "https://cursorboy.github.io/program-design/",
+  "repository": { "type": "git", "url": "https://github.com/cursorboy/program-design.git" },
   "bin": {
     "program-design": "./dist/cli/index.js"
   },
@@ -13,7 +15,10 @@
     "dist",
     "fixtures/sample-app",
     "docs",
-    "skill"
+    "skills",
+    "hooks",
+    "scripts",
+    ".claude-plugin"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
