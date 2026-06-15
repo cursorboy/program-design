@@ -90,7 +90,11 @@ export function deriveSystemMap(graph: FactsGraph, opts: DeriveOptions = {}): Sy
     .filter((n) => n.kind === 'dbTable' && !n.unresolved)
     .sort((a, b) => (a.name < b.name ? -1 : 1));
 
-  if (pages.length === 0 && routes.length === 0 && tables.length === 0) return null;
+  // No Next.js structure to map deeply → fall back to the universal map (any
+  // JS/TS project: code areas + the packages and outside services they use).
+  if (pages.length === 0 && routes.length === 0 && tables.length === 0) {
+    return deriveUniversalMap(graph, opts);
+  }
 
   const nodes: SystemNode[] = [];
   const edges: SystemEdge[] = [];
@@ -268,6 +272,7 @@ export function deriveSystemMap(graph: FactsGraph, opts: DeriveOptions = {}): Sy
   return {
     schemaVersion: SYSTEM_MAP_VERSION,
     generatedBy: 'deterministic',
+    mapKind: 'nextjs',
     generatedAt: opts.now ?? new Date().toISOString(),
     repoRoot: graph.repoRoot,
     what: sentences.join(' '),
@@ -275,6 +280,141 @@ export function deriveSystemMap(graph: FactsGraph, opts: DeriveOptions = {}): Sy
     edges,
     dataFlows: flows.map((f) => ({ title: f.title, plain: f.plain })),
     concerns: deriveConcerns(graph, flows),
+  };
+}
+
+/** "src/components" → "Components" · "lib" → "Library" · "." → "Project root". */
+function friendlyAreaName(seg: string): string {
+  if (!seg || seg === '.') return 'Project root';
+  const map: Record<string, string> = {
+    src: 'Source', lib: 'Library', libs: 'Library', components: 'Components',
+    component: 'Components', utils: 'Utilities', util: 'Utilities', hooks: 'Hooks',
+    api: 'API code', server: 'Server code', client: 'Client code', app: 'App',
+    pages: 'Pages', routes: 'Routes', models: 'Data models', services: 'Services',
+    controllers: 'Controllers', config: 'Configuration', scripts: 'Scripts',
+    test: 'Tests', tests: 'Tests', styles: 'Styles', public: 'Static files',
+    store: 'State', stores: 'State', types: 'Types', helpers: 'Helpers',
+  };
+  if (map[seg.toLowerCase()]) return map[seg.toLowerCase()]!;
+  const words = seg.replace(/[_-]+/g, ' ').replace(/([a-z0-9])([A-Z])/g, '$1 $2').trim();
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
+/** The directory "area" a repo-relative file belongs to (skips a leading src/). */
+function areaOf(file: string): string {
+  const parts = file.replace(/^\.\//, '').split('/').filter(Boolean);
+  if (parts.length <= 1) return '.'; // a root-level file
+  let i = 0;
+  if (parts[0] === 'src' && parts.length > 2) i = 1; // group under src/<area>
+  return parts[i] ?? '.';
+}
+
+/**
+ * The UNIVERSAL map — works on ANY JavaScript/TypeScript project. It shows the
+ * areas of your code (top-level source directories) and the outside services +
+ * packages they pull in, all fact-anchored to real files. Deep Next.js/Prisma
+ * structure (routes, schema, claim verdicts) is absent here by construction; the
+ * UI says so. Returns null only when there is genuinely no code to map.
+ */
+export function deriveUniversalMap(graph: FactsGraph, opts: DeriveOptions = {}): SystemMap | null {
+  const files = graph.nodes.filter((n) => n.kind === 'file');
+  const deps = graph.nodes
+    .filter((n) => n.kind === 'dependency')
+    .sort((a, b) => (a.name < b.name ? -1 : 1));
+  if (files.length === 0 && deps.length === 0) return null;
+
+  const nodes: SystemNode[] = [];
+  const edges: SystemEdge[] = [];
+  const nodeIds = new Set<string>();
+  const push = (n: SystemNode): void => {
+    if (nodeIds.has(n.id)) return;
+    nodeIds.add(n.id);
+    nodes.push(n);
+  };
+
+  // ---- code areas: group source files by top-level directory --------------
+  const byArea = new Map<string, FactNode[]>();
+  for (const f of files) {
+    const a = areaOf(f.name);
+    (byArea.get(a) ?? byArea.set(a, []).get(a)!).push(f);
+  }
+  // Drop trivial noise areas; keep real code areas, biggest first, cap at 8.
+  const SKIP_AREA = /^(node_modules|\.next|dist|build|coverage|public|out|vendor)$/i;
+  const areas = [...byArea.entries()]
+    .filter(([a]) => !SKIP_AREA.test(a) && !a.startsWith('.'))
+    .sort((x, y) => y[1].length - x[1].length || (x[0] < y[0] ? -1 : 1))
+    .slice(0, 8);
+  const areaId = (a: string): string => `area:${a}`;
+  for (const [a, fs] of areas) {
+    const rep = fs.find((f) => f.provenance) ?? fs[0]!;
+    push({
+      id: areaId(a),
+      kind: 'server',
+      layer: 'servers',
+      label: friendlyAreaName(a),
+      technical: `${plural(fs.length, 'file')} in ${a === '.' ? 'the root' : a + '/'}`,
+      file: receiptOf(rep.provenance) ?? `${rep.name}:1`,
+    });
+  }
+
+  // ---- outside services from recognized dependencies ----------------------
+  const extLabels: string[] = [];
+  for (const dep of deps) {
+    const known = KNOWN_EXTERNAL.find((k) => k.test.test(dep.name));
+    if (!known) continue;
+    const id = `ext:${dep.name}`;
+    push({
+      id,
+      kind: 'externalService',
+      layer: 'external',
+      label: known.label,
+      technical: dep.name,
+      provider: known.provider,
+      file: receiptOf(dep.provenance),
+    });
+    extLabels.push(known.label.split(' — ')[0]!);
+    // Link a code area to the service when a file in it imports the package.
+    const importer = graph.edges.find(
+      (e) => e.kind === 'dependsOn' && e.to === dep.id && e.provenance,
+    );
+    const fromArea = importer?.provenance ? areaId(areaOf(importer.provenance.file)) : null;
+    edges.push({
+      from: fromArea && nodeIds.has(fromArea) ? fromArea : (areas[0] ? areaId(areas[0][0]) : id),
+      to: id,
+      flows: `your code uses ${known.label.split(' — ')[0]}`,
+      file: receiptOf(importer?.provenance) ?? receiptOf(dep.provenance),
+      intended: importer ? undefined : true,
+    });
+  }
+
+  if (nodes.length === 0) return null;
+
+  const depCount = deps.length;
+  const sentences: string[] = [];
+  if (areas.length > 0) {
+    sentences.push(
+      `Your code is organized into ${plural(areas.length, 'area')} — ${listNames(areas.map(([a]) => friendlyAreaName(a)))}.`,
+    );
+  }
+  if (extLabels.length > 0) {
+    sentences.push(`It uses outside services: ${listNames(extLabels)}.`);
+  }
+  if (depCount > 0) {
+    sentences.push(`There ${depCount === 1 ? 'is' : 'are'} ${plural(depCount, 'package')} installed in total.`);
+  }
+  sentences.push('Deep checks — routes, database, and claim verification — understand Next.js + Prisma so far; this is the structure I can read for any project.');
+
+  return {
+    schemaVersion: SYSTEM_MAP_VERSION,
+    generatedBy: 'deterministic',
+    mapKind: 'universal',
+    generatedAt: opts.now ?? new Date().toISOString(),
+    repoRoot: graph.repoRoot,
+    what: sentences.join(' '),
+    nodes,
+    edges,
+    dataFlows: [],
+    concerns: deriveConcerns(graph),
   };
 }
 
@@ -355,6 +495,7 @@ export function deriveConcerns(graph: FactsGraph, flows?: UserFlow[]): SystemCon
  * their own once both endpoints are visible.
  */
 export function deriveTour(map: SystemMap): Tour {
+  if (map.mapKind === 'universal') return deriveUniversalTour(map);
   const beats: Beat[] = [];
   const pageNodes = map.nodes.filter((n) => n.kind === 'page');
   const extNodes = map.nodes.filter((n) => n.kind === 'externalService');
@@ -402,4 +543,40 @@ export function deriveTour(map: SystemMap): Tour {
   });
 
   return { schemaVersion: TOUR_VERSION, title: 'How your app works', beats, generatedBy: 'deterministic' };
+}
+
+/** The guided tour for the universal (any JS/TS project) map. */
+function deriveUniversalTour(map: SystemMap): Tour {
+  const beats: Beat[] = [];
+  const areas = map.nodes.filter((n) => n.kind === 'server');
+  const exts = map.nodes.filter((n) => n.kind === 'externalService');
+
+  beats.push({
+    caption: 'This is your project, read straight from the real code — let’s build the picture one piece at a time.',
+    reveal: [],
+  });
+  if (areas.length > 0) {
+    beats.push({
+      caption: `Your code is grouped into areas: ${listNames(areas.map((n) => n.label), 4)}. Tap any area to see how many files it holds.`,
+      reveal: areas.map((n) => n.id),
+    });
+  }
+  if (exts.length > 0) {
+    beats.push({
+      caption: `Your code reaches out to services other companies run: ${listNames(exts.map((n) => n.label.split(' — ')[0]!))}. Each line is anchored to the import in your code.`,
+      reveal: exts.map((n) => n.id),
+    });
+  }
+  if (map.concerns.length > 0) {
+    beats.push({
+      caption: `${plural(map.concerns.length, 'thing')} looked worth checking — each points at the exact line, never a verdict.`,
+      reveal: [],
+      concern: true,
+    });
+  }
+  beats.push({
+    caption: 'That’s the structure I can read for any project. Deeper checks — routes, database, claim verification — understand Next.js + Prisma so far.',
+    reveal: [],
+  });
+  return { schemaVersion: TOUR_VERSION, title: 'How your project is built', beats, generatedBy: 'deterministic' };
 }

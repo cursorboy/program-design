@@ -6,6 +6,7 @@ import {
   nodeMajor,
   pidAlive,
   looksLikeNextRepo,
+  looksLikeJsRepo,
 } from '../../src/cli/doctor-utils.js';
 
 const tmpDirs: string[] = [];
@@ -93,6 +94,40 @@ describe('looksLikeNextRepo', () => {
   it('false (not a crash) on malformed package.json', () => {
     const repo = makeRepo();
     writeFileSync(join(repo, 'package.json'), '{ broken');
+    expect(looksLikeNextRepo(repo)).toBe(false);
+  });
+});
+
+describe('looksLikeJsRepo (universal-map gate — any JS/TS project)', () => {
+  it('true for a plain Node project with only package.json', () => {
+    const repo = makeRepo();
+    writeFileSync(join(repo, 'package.json'), JSON.stringify({ dependencies: { stripe: '14' } }));
+    expect(looksLikeJsRepo(repo)).toBe(true);
+  });
+
+  it('true for a TS project with a tsconfig and a src/ dir', () => {
+    const repo = makeRepo();
+    writeFileSync(join(repo, 'tsconfig.json'), '{}');
+    mkdirSync(join(repo, 'src'));
+    expect(looksLikeJsRepo(repo)).toBe(true);
+  });
+
+  it('true when a JS/TS file sits at the repo root', () => {
+    const repo = makeRepo();
+    writeFileSync(join(repo, 'index.mjs'), 'export const x = 1;');
+    expect(looksLikeJsRepo(repo)).toBe(true);
+  });
+
+  it('false for a non-JS project (no package.json, no source dir, no JS/TS file)', () => {
+    const repo = makeRepo();
+    writeFileSync(join(repo, 'main.py'), "print('hi')");
+    expect(looksLikeJsRepo(repo)).toBe(false);
+  });
+
+  it('is broader than looksLikeNextRepo: a non-Next JS repo passes JS but not Next', () => {
+    const repo = makeRepo();
+    writeFileSync(join(repo, 'package.json'), JSON.stringify({ dependencies: { express: '4' } }));
+    expect(looksLikeJsRepo(repo)).toBe(true);
     expect(looksLikeNextRepo(repo)).toBe(false);
   });
 });

@@ -113,6 +113,14 @@ export interface SystemMap {
   schemaVersion: number;
   /** 'llm' = organize pass produced it; 'deterministic' = raw-facts fallback. */
   generatedBy: 'llm' | 'deterministic';
+  /**
+   * 'nextjs' = the full layered app map (pages → server → records → services),
+   * available when Next.js routes/schema are detected. 'universal' = the
+   * any-JS/TS-project map (your code areas → the packages + outside services
+   * they use), shown when deep Next.js structure is absent. The UI relabels its
+   * bands and shows an honest "deep checks are Next.js-only" note for universal.
+   */
+  mapKind?: 'nextjs' | 'universal';
   generatedAt: string;
   repoRoot: string;
   /** Plain "what this whole system is", 3-4 sentences. */

@@ -34,6 +34,12 @@ export const ERROR_CATALOG = {
       'No app/ or pages/ directory and no "next" dependency in package.json was found at the repo root.',
     fix: 'cd into your Next.js project, or pass --repo <path>. Try `npx program-design demo` to run on the bundled sample app.',
   },
+  'not-a-code-repo': {
+    problem: 'This directory does not look like a JavaScript/TypeScript project.',
+    cause:
+      'No package.json, tsconfig, common source directory (src/app/lib/…), or .js/.ts file was found at the repo root. The universal map needs JS/TS code to read; deep verification additionally needs Next.js + Prisma.',
+    fix: 'cd into your project, or pass --repo <path>. Try `npx program-design demo` to run on the bundled sample app.',
+  },
   'unsupported-stack': {
     problem: 'This stack variant is not supported yet.',
     cause:

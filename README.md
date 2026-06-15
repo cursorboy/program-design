@@ -7,11 +7,14 @@ yourself.**
 
 `badge: verifies presence, not correctness`
 
-program-design is a free, open-source reader for AI-built Next.js apps. When the
-building agent says "done, I added login with rate limiting and saved the email
-to the database," program-design parses the actual code, builds a facts graph
-from raw source, and checks that claim against it — and puts a `file:line`
-receipt under every statement. It also serves a live structure diagram you can
+program-design is a free, open-source reader for AI-built apps. It draws a
+plain-language **map of any JavaScript/TypeScript project** — the areas of your
+code and the outside services they use, each anchored to a real file. On
+**Next.js + Prisma** it goes deeper: when the building agent says "done, I added
+login with rate limiting and saved the email to the database," program-design
+parses the actual code, builds a facts graph from raw source, and checks that
+claim against it — putting a `file:line` receipt under every statement. It also
+serves a live structure diagram you can
 watch as the build proceeds.
 
 It is **not** "a second AI that verifies the first" (a second model hallucinates

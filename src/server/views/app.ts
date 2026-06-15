@@ -182,6 +182,13 @@ ${STYLES}
       <div id="build-indicator" class="build-indicator" role="status" hidden>
         <span class="bi-dot" aria-hidden="true"></span><span class="bi-text">building…</span>
       </div>
+      <!-- honest note for the UNIVERSAL map (any non-Next.js project): deep
+           checks are Next.js + Prisma only so far. Shown only when mapKind is
+           universal; toggled by setSystemChrome. -->
+      <div id="map-note" class="map-note" role="note" hidden>
+        <span class="map-note-dot" aria-hidden="true"></span>
+        Showing the structure I can read for <strong>any</strong> project. Deep checks — routes, database, and claim verification — understand <strong>Next.js + Prisma</strong> so far.
+      </div>
       <!-- quiet floating presence-not-correctness badge, bottom-center on the map -->
       <footer class="map-foot" aria-hidden="true">
         <span class="badge" title="This tool checks that claimed things exist in the code. It does not check that they work.">verifies presence, not correctness</span>
@@ -1409,6 +1416,18 @@ body.tour-active #node-layer .cn-host.tour-shown { opacity: 1; }
 }
 .canvas-ctl:hover { color: var(--accent); background: var(--bg-2); }
 .canvas-ctl svg { width: 16px; height: 16px; display: block; }
+
+/* Honest note for the universal (any-project) map — top-center, calm. */
+.map-note {
+  position: absolute; left: 50%; top: calc(var(--header-h) + 10px); transform: translateX(-50%);
+  z-index: 6; max-width: min(560px, calc(100vw - 28px));
+  display: inline-flex; align-items: center; gap: 9px;
+  background: var(--bg); border: 1px solid var(--border-strong); border-radius: 999px;
+  box-shadow: var(--elevation); padding: 8px 16px;
+  font-size: 12.5px; color: var(--fg-dim); text-align: left; line-height: 1.4;
+}
+.map-note strong { color: var(--fg); font-weight: 600; }
+.map-note .map-note-dot { flex: 0 0 auto; width: 7px; height: 7px; border-radius: 999px; background: var(--accent); }
 
 /* "What am I looking at?" — the plain-language key, bottom-left. */
 .map-key { position: absolute; left: 14px; bottom: 14px; z-index: 6; }
@@ -3863,12 +3882,25 @@ function appScript(): string {
 
   // five layers laid left→right. Scheduled sits as a small rail ABOVE servers.
   var SYS_LAYERS = ['frontend', 'servers', 'data', 'external'];
-  var SYS_LAYER_CAPTION = {
+  // Two caption sets: the Next.js app shape, and the universal any-project shape
+  // (code areas + the packages/services they use). currentMapKind picks which.
+  var SYS_LAYER_CAPTION_NEXT = {
     frontend: { title: 'WHAT PEOPLE SEE', sub: 'pages and screens' },
     servers:  { title: 'SERVERS DOING THE WORK', sub: 'the services that run code' },
     data:     { title: 'WHERE DATA LIVES', sub: 'databases and caches' },
     external: { title: 'OUTSIDE SERVICES', sub: 'third parties you call' }
   };
+  var SYS_LAYER_CAPTION_UNIVERSAL = {
+    frontend: { title: 'ENTRY POINTS', sub: 'where your app starts' },
+    servers:  { title: 'YOUR CODE', sub: 'the areas of code you wrote' },
+    data:     { title: 'WHERE DATA LIVES', sub: 'databases and caches' },
+    external: { title: 'OUTSIDE SERVICES & PACKAGES', sub: 'what your code pulls in' }
+  };
+  var currentMapKind = 'nextjs';
+  function sysLayerCaption() {
+    return currentMapKind === 'universal' ? SYS_LAYER_CAPTION_UNIVERSAL : SYS_LAYER_CAPTION_NEXT;
+  }
+  var SYS_LAYER_CAPTION = SYS_LAYER_CAPTION_NEXT; // back-compat alias (reassigned per map)
   // column x-centers (world px). TIGHTER gutters than before so connecting wires
   // are short and the relationship is obvious — but still enough room for the
   // brand bars + the clamped edge labels. Each layer shares ONE x (clean
@@ -4569,12 +4601,19 @@ function appScript(): string {
     var whatEl = document.getElementById('sys-what');
     var hiwBtn = document.getElementById('menu-howitworks');
     var concBtn = document.getElementById('menu-concerns');
+    var noteEl = document.getElementById('map-note');
     if (!map) {
       if (whatEl) { whatEl.hidden = true; whatEl.textContent = ''; }
       if (hiwBtn) hiwBtn.hidden = true;
       if (concBtn) concBtn.hidden = true;
+      if (noteEl) noteEl.hidden = true;
       return;
     }
+    // Map kind drives the band labels and the honest "deep checks are Next.js"
+    // note. Default to nextjs for older/authored maps that omit mapKind.
+    currentMapKind = (map.mapKind === 'universal') ? 'universal' : 'nextjs';
+    document.body.setAttribute('data-mapkind', currentMapKind);
+    if (noteEl) noteEl.hidden = (currentMapKind !== 'universal');
     if (whatEl) {
       whatEl.textContent = map.what || '';
       whatEl.title = map.what || '';
@@ -4759,12 +4798,17 @@ function appScript(): string {
       html += '<span class="sys-expand" data-expand="' + esc(n.id) + '">' + SYS_GLYPHS.chevron + n.tables.length + ' table' + (n.tables.length === 1 ? '' : 's') + '</span>';
     }
     html += '</span>'; // /sys-body
-    // --- brand BAR: full-width strip across the bottom of the card ---
-    var barName = brandBarName(n);
-    html += '<span class="sys-brandbar" style="background:' + esc(brand.primary) + ';color:' + esc(brand.onPrimary) + '" aria-hidden="true">';
-    html += '<span class="sys-brand-dot" style="background:' + esc(brand.onPrimary) + '"></span>';
-    html += '<span class="sys-brand-name">' + esc(barName) + '</span>';
-    html += '</span>';
+    // --- brand BAR: full-width strip, ONLY when the node has a real provider
+    // or host. A plain code area / generic server has no provider, so a "service"
+    // bar would be meaningless noise — skip it there.
+    var hasBrand = nodeIsBranded(n) || (n.provider && n.provider !== 'unknown') || (n.host && String(n.host).trim());
+    if (hasBrand) {
+      var barName = brandBarName(n);
+      html += '<span class="sys-brandbar" style="background:' + esc(brand.primary) + ';color:' + esc(brand.onPrimary) + '" aria-hidden="true">';
+      html += '<span class="sys-brand-dot" style="background:' + esc(brand.onPrimary) + '"></span>';
+      html += '<span class="sys-brand-name">' + esc(barName) + '</span>';
+      html += '</span>';
+    }
     // claim-check badge: a small corner glyph. ✓ = built + found in your code
     // (default for any node with a file receipt); ⚠ = referenced by a concern.
     var claim = claimFor(n);
@@ -5115,14 +5159,17 @@ function appScript(): string {
     if (!host) return;
     if (!systemMode || !currentModel || !currentModel.system) { host.hidden = true; host.innerHTML = ''; return; }
     host.hidden = false;
-    if (!host.dataset.built) {
+    // Rebuild when first shown OR when the map kind changed (Next ⇄ universal),
+    // since each kind labels the bands differently.
+    if (host.dataset.built !== currentMapKind) {
+      var caps = sysLayerCaption();
       var html = '';
       SYS_LAYERS.forEach(function (L) {
-        var cap = SYS_LAYER_CAPTION[L];
+        var cap = caps[L];
         html += '<div class="sys-caption" data-layer="' + L + '">' + esc(cap.title) + '<span class="sys-caption-sub">' + esc(cap.sub) + '</span></div>';
       });
       host.innerHTML = html;
-      host.dataset.built = '1';
+      host.dataset.built = currentMapKind;
     }
     positionSysCaptions();
   }

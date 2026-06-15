@@ -20,6 +20,15 @@ within a major version (see [docs/claim-manifest.md](docs/claim-manifest.md)).
 
 ### Added
 
+- **Universal map — works on any JavaScript/TypeScript project.** When a repo
+  isn't Next.js, `live` no longer refuses; it draws a universal map: the areas
+  of your code (top-level source directories) and the outside services + packages
+  they pull in (Stripe, OpenAI, Redis, …), each anchored to a real file. The
+  bands relabel to "YOUR CODE" / "OUTSIDE SERVICES & PACKAGES", and an honest
+  banner says deep checks (routes, schema, claim verdicts) understand Next.js +
+  Prisma so far. The gate broadened from Next.js-only to any JS/TS project
+  (`looksLikeJsRepo`); the SessionStart hook activates on any JS/TS project too,
+  tailoring its message. New `not-a-code-repo` error for non-JS/TS directories.
 - **One-command Claude Code install.** program-design now ships as a Claude Code
   **plugin**: `/plugin marketplace add cursorboy/program-design` then
   `/plugin install program-design@program-design`. After that the skill
@@ -44,6 +53,27 @@ within a major version (see [docs/claim-manifest.md](docs/claim-manifest.md)).
 - The menu's "Detail level" control is now a human-language audience switch
   ("How should we explain your app?"), and the map is the home surface for
   every audience (the Technical tree stays reachable from the menu).
+
+### Fixed
+
+- **Dynamic route claims no longer false-ABSENT.** Claiming a route in
+  Express/OpenAPI style (`/blog/:slug`) for a route that exists in Next.js
+  filesystem form (`app/blog/[slug]`) resolved ABSENT — a false absent, the
+  exact bug class this tool exists to prevent. The checker now canonicalizes
+  `:param` → `[param]` (and `:param*` → `[...param]`) before matching
+  (`src/core/check/checker.ts`). Surfaced by the corpus expansion below.
+
+### Internal
+
+- **Adversarial verdict corpus expanded 21 → 59 claims** (`fixtures/corpus/`),
+  moving past the ≥50-claim release gate. New cases are deliberately adversarial
+  — dynamic/route-group/method-qualifier route traps, HOF-guard and matcher
+  middleware, Prisma `@map`/relation/`@@map` schema traps, destructured and
+  bracket-access env reads, scoped and dev-only deps, and
+  constant-resolved/dynamic-undetermined wiring — each chosen to provoke a false
+  ABSENT if the checker were naive. Two residual false-ABSENT gaps the corpus
+  exposed (computed-key env reads, helper-wrapped wiring) are documented in
+  `TODOS.md` rather than papered over.
 
 ## [0.1.0] — 2026-06-10
 

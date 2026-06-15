@@ -4,7 +4,7 @@
  * Kept out of index.ts so they can be unit-tested without importing the core
  * extract/check/narrate/server modules (which spin up real work) or a daemon.
  */
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 /** Major version number from a Node version string ("v20.1.0" → 20). */
@@ -44,4 +44,29 @@ export function looksLikeNextRepo(repoRoot: string): boolean {
   } catch {
     return false;
   }
+}
+
+const JS_TS_FILE = /\.(?:[cm]?jsx?|tsx?)$/;
+
+/**
+ * Broad detection of a JavaScript/TypeScript project — the universal map runs on
+ * any of these, even though deep verification (routes/schema) is Next.js-only.
+ * True if there is a package.json or tsconfig, a common source directory, or any
+ * JS/TS file at the repo root. Cheap: a shallow look, never a full walk.
+ */
+export function looksLikeJsRepo(repoRoot: string): boolean {
+  for (const f of ['package.json', 'tsconfig.json', 'jsconfig.json']) {
+    if (existsSync(join(repoRoot, f))) return true;
+  }
+  for (const d of ['src', 'app', 'pages', 'lib', 'components']) {
+    if (existsSync(join(repoRoot, d))) return true;
+  }
+  try {
+    for (const name of readdirSync(repoRoot)) {
+      if (JS_TS_FILE.test(name)) return true;
+    }
+  } catch {
+    /* unreadable dir → fall through to false */
+  }
+  return false;
 }

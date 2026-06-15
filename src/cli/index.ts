@@ -71,7 +71,7 @@ import {
   readVerdicts,
   writeVerdicts,
 } from './claims-io.js';
-import { nodeMajor, pidAlive, looksLikeNextRepo } from './doctor-utils.js';
+import { nodeMajor, pidAlive, looksLikeNextRepo, looksLikeJsRepo } from './doctor-utils.js';
 
 const STALE_GRAPH_MS = 60_000;
 const CLI_VERSION = '0.2.0';
@@ -194,8 +194,10 @@ interface LiveFlags {
 }
 
 async function runLive(repoRoot: string, flags: LiveFlags): Promise<void> {
-  if (!looksLikeNextRepo(repoRoot)) {
-    fail('not-a-nextjs-repo');
+  // The universal map runs on any JS/TS project; deep verification (routes,
+  // schema, claims) is Next.js + Prisma and degrades honestly elsewhere.
+  if (!looksLikeJsRepo(repoRoot)) {
+    fail('not-a-code-repo');
   }
 
   ensureStateDir(repoRoot);
@@ -284,7 +286,7 @@ async function runCheck(repoRoot: string, flags: CheckFlags): Promise<number> {
   // Load the graph; rebuild if missing or stale (>60s) or schema mismatch.
   let graph = readGraph(repoRoot);
   if (!graph || isGraphStale(repoRoot, STALE_GRAPH_MS)) {
-    if (!looksLikeNextRepo(repoRoot)) fail('not-a-nextjs-repo');
+    if (!looksLikeJsRepo(repoRoot)) fail('not-a-code-repo');
     graph = await extract(repoRoot, config.ignoreGlobs, false);
     writeGraph(repoRoot, graph);
     writeProjections(repoRoot, graph);
@@ -361,7 +363,7 @@ async function runOrganize(repoRoot: string, flags: OrganizeFlags): Promise<void
   const config = loadConfigOrWarn(repoRoot);
   let graph = readGraph(repoRoot);
   if (!graph || isGraphStale(repoRoot, STALE_GRAPH_MS)) {
-    if (!looksLikeNextRepo(repoRoot)) fail('not-a-nextjs-repo');
+    if (!looksLikeJsRepo(repoRoot)) fail('not-a-code-repo');
     graph = await extract(repoRoot, config.ignoreGlobs, false);
     writeGraph(repoRoot, graph);
   }
@@ -522,7 +524,7 @@ async function runExportMermaid(
 ): Promise<void> {
   let graph = readGraph(repoRoot);
   if (!graph) {
-    if (!looksLikeNextRepo(repoRoot)) fail('not-a-nextjs-repo');
+    if (!looksLikeJsRepo(repoRoot)) fail('not-a-code-repo');
     const config = loadConfigOrWarn(repoRoot);
     ensureStateDir(repoRoot);
     graph = await extract(repoRoot, config.ignoreGlobs, false);

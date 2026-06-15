@@ -129,3 +129,17 @@ structure).
 **Fix.** Give each node `id`, `kind`, `label`, and `file:
 "<repo-relative-path>:<line>"` pointing at code that exists.
 `npx program-design organize --reset` falls back to the deterministic map.
+
+---
+
+## not-a-code-repo
+
+**Problem.** This directory does not look like a JavaScript/TypeScript project.
+
+**Cause.** No `package.json`, `tsconfig`, common source directory (`src`, `app`,
+`lib`, …), or `.js`/`.ts` file was found at the repo root. The universal map
+needs JS/TS code to read; deep verification (routes, schema, claims) additionally
+needs Next.js + Prisma.
+
+**Fix.** `cd` into your project, or pass `--repo <path>`. Try
+`npx program-design demo` to run on the bundled sample app.
