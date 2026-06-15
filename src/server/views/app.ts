@@ -352,13 +352,48 @@ ${STYLES}
       <button class="menu-item" type="button" data-menu="shortcuts">Shortcuts</button>
     </nav>
     <div class="menu-depth-wrap">
-      <p class="menu-depth-label">Detail level</p>
-      <div class="depth" role="radiogroup" aria-label="Detail level" id="depth-toggle">
-        <button class="depth-opt" type="button" role="radio" id="depth-map" data-depth="map" aria-checked="true" title="The custom flow map (the home)">Map</button>
-        <button class="depth-opt" type="button" role="radio" id="depth-plain" data-depth="plain" aria-checked="false" title="Friendly flow sentences, no diagram">Plain</button>
-        <button class="depth-opt" type="button" role="radio" id="depth-technical" data-depth="technical" aria-checked="false" title="Everything: structure tree, Mermaid, raw API links">Technical</button>
+      <p class="menu-depth-label">How should we explain your app?</p>
+      <div class="aud" role="radiogroup" aria-label="How technical should the map be" id="aud-toggle">
+        <button class="aud-opt" type="button" role="radio" id="aud-simple" data-aud="simple" aria-checked="false" title="Plain words, the simplest picture">
+          <span class="aud-emoji" aria-hidden="true">🌱</span><span class="aud-name">Keep it simple</span><span class="aud-sub">plain words, no jargon</span>
+        </button>
+        <button class="aud-opt" type="button" role="radio" id="aud-guided" data-aud="guided" aria-checked="true" title="The map, with things explained as you go">
+          <span class="aud-emoji" aria-hidden="true">🧭</span><span class="aud-name">Show &amp; explain</span><span class="aud-sub">tap anything to learn it</span>
+        </button>
+        <button class="aud-opt" type="button" role="radio" id="aud-technical" data-aud="technical" aria-checked="false" title="Files, routes, and receipts on everything">
+          <span class="aud-emoji" aria-hidden="true">⚙️</span><span class="aud-name">I write code</span><span class="aud-sub">files, routes, receipts</span>
+        </button>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- ONBOARDING: first-visit "how should we explain this?" question. Gated on
+     localStorage pd-audience; shown over the map before the tour. Re-openable
+     from the menu. The three choices map 1:1 to the audience radio above. -->
+<div id="onboard" class="overlay onboard-overlay" role="dialog" aria-modal="true" aria-labelledby="onboard-title" hidden>
+  <div class="onboard-card">
+    <p class="onboard-kicker">Before we draw your app…</p>
+    <h2 id="onboard-title" class="onboard-title">How should we explain it?</h2>
+    <p class="onboard-lead">Pick whatever feels right — you can change it anytime from the menu.</p>
+    <div class="onboard-choices">
+      <button class="onboard-choice" type="button" data-aud="simple">
+        <span class="oc-emoji" aria-hidden="true">🌱</span>
+        <span class="oc-name">Keep it simple</span>
+        <span class="oc-desc">Plain words and the clearest possible picture. No code, no jargon.</span>
+      </button>
+      <button class="onboard-choice is-default" type="button" data-aud="guided">
+        <span class="oc-emoji" aria-hidden="true">🧭</span>
+        <span class="oc-name">Show me &amp; explain</span>
+        <span class="oc-desc">The map, with everything explained as you go. Tap anything to learn what it is.</span>
+      </button>
+      <button class="onboard-choice" type="button" data-aud="technical">
+        <span class="oc-emoji" aria-hidden="true">⚙️</span>
+        <span class="oc-name">I write code</span>
+        <span class="oc-desc">Files, routes, and a file:line receipt on everything. The full technical detail.</span>
+      </button>
+    </div>
+    <button class="onboard-skip" type="button">Skip — just show me the map</button>
   </div>
 </div>
 
@@ -911,6 +946,82 @@ body[data-depth="technical"] .claim-tech {
 }
 .depth-opt:hover { color: var(--fg); }
 .depth-opt[aria-checked="true"] { background: var(--accent); color: #fff; }
+
+/* AUDIENCE radio (menu): three stacked cards, the chosen one accented. */
+.aud { display: grid; gap: 8px; }
+.aud-opt {
+  appearance: none; cursor: pointer; text-align: left;
+  display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; align-items: center;
+  background: var(--bg-2); border: 1px solid var(--border); border-radius: 12px;
+  padding: 12px 14px; color: var(--fg);
+  transition: border-color .16s ease, background .16s ease, box-shadow .16s ease;
+}
+.aud-opt:hover { border-color: var(--border-strong); }
+.aud-opt .aud-emoji { grid-row: 1 / span 2; font-size: 20px; line-height: 1; }
+.aud-opt .aud-name { font-size: 14px; font-weight: 600; }
+.aud-opt .aud-sub { font-size: 12px; color: var(--muted); }
+.aud-opt[aria-checked="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; background: var(--bg); }
+.aud-opt[aria-checked="true"] .aud-name { color: var(--accent); }
+
+/* ONBOARDING overlay: the first-visit audience question. */
+.onboard-overlay { display: grid; place-items: center; background: color-mix(in srgb, var(--bg) 70%, transparent); backdrop-filter: blur(7px); }
+.onboard-card {
+  background: var(--bg); border: 1px solid var(--border-strong); border-radius: 18px;
+  box-shadow: 0 40px 100px -40px rgba(28,25,23,.5);
+  width: min(540px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow-y: auto;
+  padding: 30px 30px 22px; text-align: center;
+  animation: onboard-pop .42s var(--ease-spring) both;
+}
+@keyframes onboard-pop { from { opacity: 0; transform: translateY(12px) scale(.97); } to { opacity: 1; transform: none; } }
+.onboard-kicker { font-family: var(--mono); font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; }
+.onboard-title { font-size: 25px; letter-spacing: -.01em; margin: 0 0 8px; }
+.onboard-lead { font-size: 14.5px; color: var(--fg-dim); max-width: 42ch; margin: 0 auto 22px; }
+.onboard-choices { display: grid; gap: 12px; text-align: left; }
+.onboard-choice {
+  appearance: none; cursor: pointer; display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; align-items: start;
+  background: var(--bg-2); border: 1.5px solid var(--border); border-radius: 14px; padding: 16px 18px; color: var(--fg);
+  transition: border-color .16s ease, transform .16s var(--ease-spring), box-shadow .16s ease, background .16s ease;
+}
+.onboard-choice:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 12px 28px -16px rgba(28,25,23,.4); }
+.onboard-choice .oc-emoji { grid-row: 1 / span 2; font-size: 28px; line-height: 1; align-self: center; }
+.onboard-choice .oc-name { font-size: 16px; font-weight: 600; }
+.onboard-choice .oc-desc { font-size: 13px; color: var(--fg-dim); line-height: 1.5; }
+.onboard-choice.is-default { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+.onboard-skip { appearance: none; background: none; border: none; cursor: pointer; color: var(--muted); font-family: var(--sans); font-size: 13px; margin-top: 16px; padding: 8px; }
+.onboard-skip:hover { color: var(--accent); text-decoration: underline; }
+
+/* ===== AUDIENCE-DRIVEN MAP DETAIL ====================================== */
+/* Technical identifiers on a node (e.g. "Postgres + pgvector") are hidden for
+   the two non-coder levels; only the "I write code" audience sees them. */
+body:not([data-audience="technical"]) .sys-tech { display: none; }
+/* Simple mode: roomier cards + bigger labels, and the chrome calms down. */
+body[data-audience="simple"] .sys-label { font-size: 14px; }
+body[data-audience="simple"] .sys-tech,
+body[data-audience="simple"] .gnode-rcpt,
+body[data-audience="simple"] .rule-id { display: none !important; }
+/* Receipts on the map's flow nodes appear only for the technical audience. */
+body:not([data-audience="technical"]) .cn-rcpt { display: none; }
+
+/* CALM WIRES for non-coders: the spaghetti of crossing lines is the #1 thing
+   that makes the map feel intimidating. At the two non-technical levels the
+   idle wires recede to a faint single tone (no rainbow brand colors, no moving
+   pulses); the connections you care about light up the moment you hover or
+   focus a box. Technical readers keep the full live, colored, pulsing wires. */
+body[data-audience="simple"] .map-wire,
+body[data-audience="guided"] .map-wire { opacity: .16; stroke-width: 1.3; }
+body[data-audience="simple"] .map-wire.wire-branded,
+body[data-audience="guided"] .map-wire.wire-branded { stroke: var(--accent) !important; }
+body[data-audience="simple"] .map-wire.wire-hi,
+body[data-audience="guided"] .map-wire.wire-hi { opacity: 1; stroke-width: 2.4; }
+body[data-audience="simple"] .map-wire.wire-dim,
+body[data-audience="guided"] .map-wire.wire-dim { opacity: .05; }
+body[data-audience="simple"] .flow-pulse { display: none !important; }
+body[data-audience="guided"] .flow-pulse { opacity: .35; }
+body[data-audience="guided"] .flow-pulse.pulse-hi { opacity: 1; }
+
+/* Roomier, more readable cards for the simplest level. */
+body[data-audience="simple"] .sys-label { font-size: 14px; font-weight: 600; }
+body[data-audience="simple"] .sys-node { min-height: 52px; }
 
 /* PLAIN level: flow strips */
 .flows-host { margin-bottom: 8px; }
@@ -1861,11 +1972,6 @@ function appScript(): string {
     depth = next;
     document.body.setAttribute('data-depth', depth);
     try { localStorage.setItem('pd-depth', depth); } catch (e) {}
-    Array.prototype.forEach.call(document.querySelectorAll('.depth-opt'), function (b) {
-      var on = b.getAttribute('data-depth') === depth;
-      b.setAttribute('aria-checked', on ? 'true' : 'false');
-      b.tabIndex = on ? 0 : -1;
-    });
     maybeShowCoach();
     // Depth changes route to the level's home surface:
     //   map → the SVG map · plain → the flow strips (Live) · technical → Live tree.
@@ -1875,22 +1981,86 @@ function appScript(): string {
       else if (current) show(current);
     }
   }
-  Array.prototype.forEach.call(document.querySelectorAll('.depth-opt'), function (b) {
-    b.addEventListener('click', function () { applyDepth(b.getAttribute('data-depth'), true); b.focus(); });
+
+  // ---- AUDIENCE: how technical the reader is (the user picks at onboarding) --
+  // This is the primary control. It drives body[data-audience] (CSS gates the
+  // map's technical detail) and a sensible internal depth. Three levels:
+  //   simple    → plainest map, no file paths, friendly captions
+  //   guided    → the map + tap-to-learn (default)
+  //   technical → file:line receipts + raw identifiers on the map; tech surfaces
+  var AUDIENCES = ['simple', 'guided', 'technical'];
+  var AUD_TO_DEPTH = { simple: 'map', guided: 'map', technical: 'technical' };
+  var audience = 'guided';
+  try { var sa = localStorage.getItem('pd-audience'); if (AUDIENCES.indexOf(sa) !== -1) audience = sa; } catch (e) {}
+  function applyAudience(next, fromUser) {
+    if (AUDIENCES.indexOf(next) === -1) next = 'guided';
+    audience = next;
+    document.body.setAttribute('data-audience', audience);
+    try { localStorage.setItem('pd-audience', audience); } catch (e) {}
+    // reflect in BOTH the menu radio and the onboarding cards
+    Array.prototype.forEach.call(document.querySelectorAll('.aud-opt'), function (b) {
+      var on = b.getAttribute('data-aud') === audience;
+      b.setAttribute('aria-checked', on ? 'true' : 'false');
+      b.tabIndex = on ? 0 : -1;
+    });
+    // keep the internal depth in step, but never yank the view on first paint
+    applyDepth(AUD_TO_DEPTH[audience] || 'map', false);
+    // the map's plain-vs-technical detail is CSS-driven; band captions are JS,
+    // so refresh them, and re-fit so bigger simple-mode cards stay in frame.
+    if (current === 'map') {
+      if (typeof updateSysCaptions === 'function') updateSysCaptions();
+      if (fromUser && typeof fitAll === 'function') requestAnimationFrame(function () { fitAll(reduceMotion); });
+    }
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('.aud-opt'), function (b) {
+    b.addEventListener('click', function () { applyAudience(b.getAttribute('data-aud'), true); b.focus(); });
     b.addEventListener('keydown', function (e) {
-      var i = depths.indexOf(b.getAttribute('data-depth'));
-      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); focusDepth((i + 1) % depths.length); }
-      else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); focusDepth((i + depths.length - 1) % depths.length); }
+      var i = AUDIENCES.indexOf(b.getAttribute('data-aud'));
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); focusAud((i + 1) % AUDIENCES.length); }
+      else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); focusAud((i + AUDIENCES.length - 1) % AUDIENCES.length); }
     });
   });
-  function focusDepth(i) {
-    var b = document.querySelector('.depth-opt[data-depth="' + depths[i] + '"]');
-    if (b) { applyDepth(depths[i], true); b.focus(); }
+  function focusAud(i) {
+    var b = document.querySelector('.aud-opt[data-aud="' + AUDIENCES[i] + '"]');
+    if (b) { applyAudience(AUDIENCES[i], true); b.focus(); }
   }
   function cycleDepth() {
-    var i = depths.indexOf(depth);
-    applyDepth(depths[(i + 1) % depths.length], true);
+    var i = AUDIENCES.indexOf(audience);
+    applyAudience(AUDIENCES[(i + 1) % AUDIENCES.length], true);
   }
+
+  // ---- ONBOARDING: first-visit "how should we explain this?" -------------
+  // Shown only when the reader has not chosen an audience yet. It precedes the
+  // guided tour (the tour is stashed and started once they choose), so the very
+  // first thing a non-technical user sees is a plain question, not a diagram.
+  var onboardingPending = false;
+  function needsOnboarding() {
+    try { return localStorage.getItem('pd-audience') === null; } catch (e) { return false; }
+  }
+  function openOnboarding(fromMenu) {
+    var ov = document.getElementById('onboard');
+    if (!ov) return;
+    if (!fromMenu) onboardingPending = true;
+    // mark the card matching the current audience as the highlighted default
+    Array.prototype.forEach.call(ov.querySelectorAll('.onboard-choice'), function (b) {
+      b.classList.toggle('is-default', b.getAttribute('data-aud') === audience);
+    });
+    openTheOverlay(ov, ov.querySelector('.onboard-choice.is-default') || ov.querySelector('.onboard-choice'));
+  }
+  function chooseAudience(aud) {
+    applyAudience(aud, true);
+    closeAllOverlays(false);
+    if (onboardingPending) { onboardingPending = false; flushPendingTour(); }
+  }
+  (function wireOnboarding() {
+    var ov = document.getElementById('onboard');
+    if (!ov) return;
+    Array.prototype.forEach.call(ov.querySelectorAll('.onboard-choice'), function (b) {
+      b.addEventListener('click', function () { chooseAudience(b.getAttribute('data-aud')); });
+    });
+    var skip = ov.querySelector('.onboard-skip');
+    if (skip) skip.addEventListener('click', function () { chooseAudience('guided'); });
+  })();
 
   // ---- coach strip (first-run, Plain only, dismissible) ------------------
   var coach = document.getElementById('coach');
@@ -2518,6 +2688,7 @@ function appScript(): string {
     if (glossaryPanel) glossaryPanel.hidden = true;
     if (shortcutsOv) shortcutsOv.hidden = true;
     if (menuSheet) menuSheet.hidden = true;
+    var onb = document.getElementById('onboard'); if (onb) onb.hidden = true;
     if (menuBtn) menuBtn.setAttribute('aria-expanded', 'false');
     openOverlay = null;
     lockBody(false);
@@ -2672,6 +2843,8 @@ function appScript(): string {
   // global keydown: Esc closes overlays then returns to the map; shortcuts
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {
+      // Closing the onboarding question without choosing = "just show me" (guided).
+      if (onboardingPending) { e.preventDefault(); chooseAudience('guided'); return; }
       if (anyOverlayOpen()) { closeAllOverlays(true); return; }
       // While the guided tour is playing, Esc skips it to the full map.
       if (tourActive && current === 'map') { e.preventDefault(); skipToFull(); return; }
@@ -3567,7 +3740,10 @@ function appScript(): string {
         // load the tour once; if present and not yet shown, enter tour mode.
         ensureTour(function (tour) {
           if (tour && tour.beats && tour.beats.length && !tourEverShown) {
-            startTour(map, tour);
+            // If onboarding is still up, draw the static map underneath and stash
+            // the tour — it starts the moment they pick an audience.
+            if (onboardingPending) { pendingTour = { map: map, tour: tour }; loadSystemMap(map); }
+            else startTour(map, tour);
           } else {
             loadSystemMap(map);
           }
@@ -3987,6 +4163,12 @@ function appScript(): string {
   var tourFetched = false;         // /api/tour already requested
   var tourActive = false;          // tour mode currently driving the map
   var tourEverShown = false;       // tour has been entered once this session
+  var pendingTour = null;          // {map,tour} stashed while onboarding is open
+  function flushPendingTour() {
+    if (!pendingTour || tourEverShown) { pendingTour = null; return; }
+    var p = pendingTour; pendingTour = null;
+    startTour(p.map, p.tour);
+  }
   var beatIndex = 0;               // current beat (0-based)
   var tourPlaying = false;         // autoplay running
   var autoplayTimer = null;        // the per-beat advance timer
@@ -5737,18 +5919,22 @@ function appScript(): string {
     refreshStatusStrip();
     var hash = (location.hash || '').replace('#', '');
     if (views.indexOf(hash) !== -1) { show(hash); return Promise.resolve(); }
-    // Open on the map unless the user saved a different depth level.
-    if (depth === 'plain') show('live');
-    else if (depth === 'technical') show('live');
-    else show('map');
+    // The map is the home for EVERY audience (even technical — the map just
+    // grows receipts). The Technical tree stays reachable from the menu.
+    show('map');
     return Promise.resolve();
   }
-  applyDepth(depth, false);
+  // First-time readers get the audience question before anything is drawn — so
+  // gate the tour now (before boot's loadMap runs) and pop the modal after.
+  var firstVisit = needsOnboarding();
+  if (firstVisit) onboardingPending = true;
+  applyAudience(audience, false);
   maybeShowCoach();
   setupEntrance();
   setupCanvasInteraction();
   wireTourControls();
   boot();
+  if (firstVisit) openOnboarding(false);
   pollHealthForBuild();
   startEvents();
 })();

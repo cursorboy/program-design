@@ -16,6 +16,27 @@ within a major version (see [docs/claim-manifest.md](docs/claim-manifest.md)).
 - CI release job is idempotent: a re-run on an already-published version skips
   instead of failing.
 
+## [Unreleased]
+
+### Added
+
+- **Audience onboarding.** First visit asks "How should we explain your app?"
+  with three plain choices — *Keep it simple* / *Show me & explain* / *I write
+  code* — before anything is drawn. The choice is remembered (`pd-audience`)
+  and changeable anytime from the menu. The guided tour waits for the answer.
+- **The map adapts to the reader.** `body[data-audience]` gates the canvas:
+  the two non-coder levels hide file paths and technical identifiers, enlarge
+  labels, and **calm the wires** — idle connections recede to a faint single
+  tone (no rainbow brand colors, no moving pulses) and light up only when you
+  hover or focus a box. The *I write code* level keeps the full colored,
+  pulsing, receipted wires. This is the fix for the dense "spaghetti" map.
+
+### Changed
+
+- The menu's "Detail level" control is now a human-language audience switch
+  ("How should we explain your app?"), and the map is the home surface for
+  every audience (the Technical tree stays reachable from the menu).
+
 ## [0.1.0] — 2026-06-10
 
 Initial release. Next.js App Router + Prisma, MVP.

@@ -399,32 +399,47 @@ describe('renderAppHtml', () => {
 
   // ---- progressive disclosure ----
 
-  it('has the three-position depth toggle (Plain · Map · Technical)', () => {
+  it('has the three-level audience toggle (simple · guided · technical)', () => {
     expect(html).toContain('role="radiogroup"');
-    expect(html).toContain('data-depth="plain"');
-    expect(html).toContain('data-depth="map"');
-    expect(html).toContain('data-depth="technical"');
-    expect(html).toMatch(/>Plain</);
-    expect(html).toMatch(/>Map</);
-    expect(html).toMatch(/>Technical</);
+    expect(html).toContain('data-aud="simple"');
+    expect(html).toContain('data-aud="guided"');
+    expect(html).toContain('data-aud="technical"');
+    // human-language labels, not jargon
+    expect(html).toContain('Keep it simple');
+    expect(html).toContain('I write code');
   });
 
   it('persists depth in localStorage under key pd-depth, defaulting to map', () => {
-    // The map replaces "Plain" as the default landing level.
+    // The map is the default landing surface for every audience.
     expect(html).toContain('pd-depth');
     expect(html).toContain("var depth = 'map'");
   });
 
-  it('moves the depth toggle into the menu and keeps Map · Plain · Technical', () => {
-    expect(html).toContain('role="radiogroup"');
-    expect(html).toContain('data-depth="map"');
-    expect(html).toContain('data-depth="plain"');
-    expect(html).toContain('data-depth="technical"');
-    // toggle lives inside the menu sheet
+  it('persists the chosen audience under pd-audience, defaulting to guided', () => {
+    expect(html).toContain('pd-audience');
+    expect(html).toContain("var audience = 'guided'");
+    // body[data-audience] is the CSS hook that gates the map's technical detail
+    expect(html).toContain("setAttribute('data-audience'");
+    expect(html).toContain('body:not([data-audience="technical"]) .sys-tech');
+  });
+
+  it('moves the audience toggle into the menu sheet', () => {
     const sheetStart = html.indexOf('id="menu-sheet"');
-    const sheetEnd = html.indexOf('id="learn-pop"');
+    const sheetEnd = html.indexOf('id="onboard"');
     const sheet = html.slice(sheetStart, sheetEnd);
-    expect(sheet).toContain('depth-toggle');
+    expect(sheet).toContain('aud-toggle');
+    expect(sheet).toContain('How should we explain your app?');
+  });
+
+  it('ships a first-visit onboarding question with three audience choices', () => {
+    expect(html).toContain('id="onboard"');
+    expect(html).toContain('How should we explain it?');
+    // each choice maps 1:1 to an audience and is dismissible without choosing
+    expect(html).toContain('onboard-choice');
+    expect(html).toContain('Skip — just show me the map');
+    // the tour waits for the answer (stashed, not started under the modal)
+    expect(html).toContain('pendingTour');
+    expect(html).toContain('onboardingPending');
   });
 
   it('bakes every GLOSSARY concept key into the page', () => {
